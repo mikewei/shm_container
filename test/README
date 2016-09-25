@@ -1,0 +1,7 @@
+The tests have covered all shm types: POSIX, SVIPC, SVIPC_HugeTLB, among which SVIPC_HugeTLB need some special privileges.
+You should:
+1) Set vm.nr_hugepages by sysctl
+2) Set vm.hugetlb_shm_group with you group
+
+You can also skip tests for SVIPC_HugeTLB through command like this:
+bazel run test -- --gtest_filter='-*/2*'
