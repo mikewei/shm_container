@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
 	name = "shm_container",
-	includes = ["include"],
+	includes = ["src"],
 	copts = [
 		"-g",
 		"-O2",
@@ -14,8 +14,8 @@ cc_library(
   ],
 	linkstatic = 1,
 	srcs = glob([
-		"src/*.cc",
-		"src/*.h",
+		"src/shmc/*.cc",
+		"src/shmc/*.h",
 	]),
 	deps = [],
 )
