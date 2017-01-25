@@ -96,9 +96,9 @@ public:
    */
   void Reset() {
     key_.clear();
-    size_ = 0;
     if (ptr_) Alloc().Detach(ptr_, size_);
     ptr_ = nullptr;
+    size_ = 0;
   }
 
   /* getter
