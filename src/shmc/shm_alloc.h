@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Bin Wei <bin@vip.qq.com>
+/* Copyright (c) 2015-2017, Bin Wei <bin@vip.qq.com>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
