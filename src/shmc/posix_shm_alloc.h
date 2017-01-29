@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_POSIX_SHM_ALLOC_H
-#define _SHMC_POSIX_SHM_ALLOC_H
+#ifndef SHMC_POSIX_SHM_ALLOC_H_
+#define SHMC_POSIX_SHM_ALLOC_H_
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -41,12 +41,11 @@ namespace shmc {
 
 namespace impl {
 
-class POSIXShmAlloc : public ShmAlloc
-{
-public:
+class POSIXShmAlloc : public ShmAlloc {
+ public:
   virtual ~POSIXShmAlloc() {}
 
-  virtual void* Attach(const std::string& key, size_t size, int flags,
+  void* Attach(const std::string& key, size_t size, int flags,
                        size_t* mapped_size) override {
     int oflag = 0;
     if (flags & kCreate)
@@ -88,7 +87,7 @@ public:
     if (!(flags & kReadOnly))
       mmap_prot |= PROT_WRITE;
     void* addr = mmap(nullptr, shm_size, mmap_prot, MAP_SHARED, fd, 0);
-    if (addr == (void*)-1) {
+    if (addr == reinterpret_cast<void*>(-1)) {
       set_last_errno(conv_errno());
       close(fd);
       return nullptr;
@@ -100,7 +99,7 @@ public:
     return addr;
   }
 
-  virtual bool Detach(void* addr, size_t size) override {
+  bool Detach(void* addr, size_t size) override {
     if (munmap(addr, size) < 0) {
       set_last_errno(conv_errno());
       return false;
@@ -108,20 +107,19 @@ public:
     return true;
   }
 
-  virtual bool Unlink(const std::string& key) override {
+  bool Unlink(const std::string& key) override {
     if (shm_unlink(key.c_str()) < 0) {
       set_last_errno(conv_errno());
       return false;
     }
     return true;
   }
-  virtual size_t AlignSize() override {
+  size_t AlignSize() override {
     return 1;
   }
 
-private:
-  static ShmAllocErrno conv_errno()
-  {
+ private:
+  static ShmAllocErrno conv_errno() {
     switch (errno) {
     case 0:
       return kErrOK;
@@ -140,10 +138,10 @@ private:
   }
 };
 
-} // namespace impl
+}  // namespace impl
 
 using POSIX = impl::POSIXShmAlloc;
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_ALLOCATOR_H
+#endif  // SHMC_POSIX_SHM_ALLOC_H_

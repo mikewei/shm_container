@@ -27,9 +27,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_HEAP_ALLOC_H
-#define _SHMC_HEAP_ALLOC_H
+#ifndef SHMC_HEAP_ALLOC_H_
+#define SHMC_HEAP_ALLOC_H_
 
+#include <sys/mman.h>
 #include <string>
 #include "shmc/shm_alloc.h"
 #include "shmc/common_utils.h"
@@ -38,12 +39,11 @@ namespace shmc {
 
 namespace impl {
 
-class HeapAlloc : public ShmAlloc
-{
-public:
+class HeapAlloc : public ShmAlloc {
+ public:
   virtual ~HeapAlloc() {}
 
-  virtual void* Attach(const std::string& key, size_t size, int flags,
+  void* Attach(const std::string& key, size_t size, int flags,
                        size_t* mapped_size) override {
     if (!(flags & kCreate)) {
       // cannot attach existed one
@@ -57,9 +57,9 @@ public:
     } else {
       mmap_prot = PROT_READ | PROT_WRITE;
     }
-    void* addr = mmap(nullptr, size, mmap_prot, MAP_PRIVATE|MAP_ANONYMOUS, 
+    void* addr = mmap(nullptr, size, mmap_prot, MAP_PRIVATE|MAP_ANONYMOUS,
                       -1, 0);
-    if (addr == (void*)-1) {
+    if (addr == reinterpret_cast<void*>(-1)) {
       set_last_errno(conv_errno());
       return nullptr;
     }
@@ -70,7 +70,7 @@ public:
     return addr;
   }
 
-  virtual bool Detach(void* addr, size_t size) override {
+  bool Detach(void* addr, size_t size) override {
     if (munmap(addr, size) < 0) {
       set_last_errno(conv_errno());
       return false;
@@ -78,17 +78,16 @@ public:
     return true;
   }
 
-  virtual bool Unlink(const std::string& key) override {
+  bool Unlink(const std::string& key) override {
     // heap pages are freed when deatched
     return true;
   }
-  virtual size_t AlignSize() override {
+  size_t AlignSize() override {
     return 1;
   }
 
-private:
-  static ShmAllocErrno conv_errno()
-  {
+ private:
+  static ShmAllocErrno conv_errno() {
     switch (errno) {
     case 0:
       return kErrOK;
@@ -107,10 +106,10 @@ private:
   }
 };
 
-} // namespace impl
+}  // namespace impl
 
 using HEAP = impl::HeapAlloc;
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_HEAP_ALLOC_H
+#endif  // SHMC_HEAP_ALLOC_H_

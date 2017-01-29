@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_COMMON_UTILS_H
-#define _SHMC_COMMON_UTILS_H
+#ifndef SHMC_COMMON_UTILS_H_
+#define SHMC_COMMON_UTILS_H_
 
 #include <unistd.h>
 #include <inttypes.h>
@@ -36,6 +36,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <utility>
 #include <functional>
 
 namespace shmc {
@@ -50,23 +51,22 @@ enum LogLevel { kError = 1, kWarning, kInfo, kDebug };
  *
  * This function must be called before any container initialized.
  */
-void SetLogHandler(LogLevel lv, std::function<void(LogLevel,const char*)> f);
+void SetLogHandler(LogLevel lv, std::function<void(LogLevel, const char*)> f);
 
 #define ERR_RET(...) do { \
-  Utils::Log(kError, __VA_ARGS__); \
-  return false; \
-} while(0)
+    Utils::Log(kError, __VA_ARGS__); \
+    return false; \
+  } while (0)
 
 namespace impl {
 
 //- Use dummy template as it allows static member variables defined in header
 template <class Dummy>
-class Utils
-{
-public:
+class Utils {
+ public:
   static void Log(LogLevel lv, const char* fmt, ...);
   static void SetLogHandler(LogLevel lv,
-                            std::function<void(LogLevel,const char*)> f);
+                            std::function<void(LogLevel, const char*)> f);
   static const char* Perror();
 
   static bool GetPrimeArray(size_t top, size_t num, size_t array[]);
@@ -85,11 +85,10 @@ public:
   }
 
   template <class T, size_t N>
-  static constexpr size_t Padding()
-  {
+  static constexpr size_t Padding() {
     return (sizeof(T) % N ? (N - sizeof(T) % N) : 0);
   }
-  template <size_t N, class T> 
+  template <size_t N, class T>
   static T RoundAlign(T num) {
     return (num + N - 1) / N * N;
   }
@@ -97,20 +96,20 @@ public:
   static T RoundAlign(T num, size_t N) {
     return (num + N - 1) / N * N;
   }
-private:
+
+ private:
   static int log_level;
-  static std::function<void(LogLevel,const char*)> log_func;
+  static std::function<void(LogLevel, const char*)> log_func;
 };
 
 template <class Dummy>
 int Utils<Dummy>::log_level = 0;
 
 template <class Dummy>
-std::function<void(LogLevel,const char*)> Utils<Dummy>::log_func;
+std::function<void(LogLevel, const char*)> Utils<Dummy>::log_func;
 
 template <class Dummy>
-void Utils<Dummy>::Log(LogLevel lv, const char* fmt, ...)
-{
+void Utils<Dummy>::Log(LogLevel lv, const char* fmt, ...) {
   if (lv <= log_level && log_func) {
     char buf[4096];
     va_list args;
@@ -123,37 +122,33 @@ void Utils<Dummy>::Log(LogLevel lv, const char* fmt, ...)
 
 template <class Dummy>
 void Utils<Dummy>::SetLogHandler(LogLevel lv,
-                                 std::function<void(LogLevel,const char*)> f)
-{
+                                 std::function<void(LogLevel, const char*)> f) {
   log_level = lv;
   log_func  = f;
 }
 
 template <class Dummy>
-const char* Utils<Dummy>::Perror()
-{
+const char* Utils<Dummy>::Perror() {
   // a tricky algorithm to support both GNU and XSI version of strerror_r
   static thread_local char buf[128];
   buf[0] = 0;
   const char* s = strerror_r(errno, buf, sizeof(buf));
-  return (s == nullptr || (long)s == -1L) ? buf : s;
+  return (s == nullptr || (int64_t)s == -1L) ? buf : s;
 }
 
-static inline bool IsPrime(size_t num)
-{
+static inline bool IsPrime(size_t num) {
   uint64_t i = 0;
   for (i = 2; i <= num / 2; i++) {
-    if(0 == num % i) return false;
+    if (0 == num % i) return false;
   }
   return true;
 }
 
 template <class Dummy>
-bool Utils<Dummy>::GetPrimeArray(size_t top, size_t num, size_t array[])
-{
+bool Utils<Dummy>::GetPrimeArray(size_t top, size_t num, size_t array[]) {
   uint64_t i = 0;
   for (; top > 0 && num > 0; top--) {
-    if (IsPrime(top)){
+    if (IsPrime(top)) {
       array[i++] = top;
       num--;
     }
@@ -162,16 +157,14 @@ bool Utils<Dummy>::GetPrimeArray(size_t top, size_t num, size_t array[])
 }
 
 template <class Dummy>
-uint64_t Utils<Dummy>::GenMagic(const char* str)
-{
+uint64_t Utils<Dummy>::GenMagic(const char* str) {
   uint64_t magic = 0;
-  strncpy((char*)&magic, str, sizeof(magic));
+  strncpy(reinterpret_cast<char*>(&magic), str, sizeof(magic));
   return magic;
 }
 
 template <class Dummy>
-const char* Utils<Dummy>::Hex(const volatile void* buf, size_t len)
-{
+const char* Utils<Dummy>::Hex(const volatile void* buf, size_t len) {
   static const char hex_map[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
@@ -191,23 +184,21 @@ const char* Utils<Dummy>::Hex(const volatile void* buf, size_t len)
 }
 
 template <class Dummy>
-size_t Utils<Dummy>::GetPageSize()
-{
-  long ret = sysconf(_SC_PAGE_SIZE);
+size_t Utils<Dummy>::GetPageSize() {
+  int64_t ret = sysconf(_SC_PAGE_SIZE);
   return ret < 0 ? 4096 : static_cast<size_t>(ret);
 }
 
-} // namespace impl
+}  // namespace impl
 
 
 using Utils = impl::Utils<void>;
 
-inline void SetLogHandler(LogLevel lv, 
-                          std::function<void(LogLevel,const char*)> f)
-{
+inline void SetLogHandler(LogLevel lv,
+                          std::function<void(LogLevel, const char*)> f) {
   Utils::SetLogHandler(lv, std::move(f));
 }
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_COMMON_UTILS_H
+#endif  // SHMC_COMMON_UTILS_H_

@@ -1,6 +1,6 @@
 all: doc
 
-CXXFLAGS = -I../include --std=c++11 
+CXXFLAGS = -I../src --std=c++11 
 CLDOCOPT = --report $(addprefix --merge , $(wildcard *.md)) --type html --output .
 
 doc:

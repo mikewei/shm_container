@@ -27,10 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_LINK_TABLE_H
-#define _SHMC_SHM_LINK_TABLE_H
+#ifndef SHMC_SHM_LINK_TABLE_H_
+#define SHMC_SHM_LINK_TABLE_H_
 
 #include <assert.h>
+#include <string>
 #include <vector>
 #include "shmc/shm_handle.h"
 #include "shmc/common_utils.h"
@@ -46,23 +47,22 @@ namespace shmc {
  * The library user need not care about the implementation and just use
  * it as a basic type which is assignable and comparable.
  */
-struct link_buf_t
-{
+struct link_buf_t {
   uint32_t head;
   uint32_t tag;
 
   //- unfortunately C++ volatile type need these code
   link_buf_t() : head(0), tag(0) {}
   link_buf_t(uint32_t h, uint32_t t) : head(h), tag(t) {}
-  link_buf_t(const volatile link_buf_t& lb) {
+  link_buf_t(const volatile link_buf_t& lb) {  // NOLINT
     head = lb.head;
     tag  = lb.tag;
   }
-  link_buf_t(const volatile link_buf_t&& lb) {
+  link_buf_t(const volatile link_buf_t&& lb) {  // NOLINT
     head = lb.head;
     tag  = lb.tag;
   }
-  link_buf_t& operator=(const volatile link_buf_t& lb) {
+  link_buf_t& operator=(const volatile link_buf_t& lb) {  // NOLINT
     head = lb.head;
     tag  = lb.tag;
     return *this;
@@ -73,7 +73,7 @@ struct link_buf_t
     return *this;
   }
   //- return void to avoid warning about implicit dereference of volatile
-  void operator=(const volatile link_buf_t& lb) volatile {
+  void operator=(const volatile link_buf_t& lb) volatile {  // NOLINT
     head = lb.head;
     tag  = lb.tag;
   }
@@ -81,13 +81,13 @@ struct link_buf_t
     head = lb.head;
     tag  = lb.tag;
   }
-  bool operator==(const volatile link_buf_t& lb) const volatile {
+  bool operator==(const volatile link_buf_t& lb) const volatile {  // NOLINT
     return (head == lb.head && tag == lb.tag);
   }
   bool operator==(const volatile link_buf_t&& lb) const volatile {
     return (head == lb.head && tag == lb.tag);
   }
-  bool operator!=(const volatile link_buf_t& lb) const volatile {
+  bool operator!=(const volatile link_buf_t& lb) const volatile {  // NOLINT
     return !(*this == lb);
   }
   bool operator!=(const volatile link_buf_t&& lb) const volatile {
@@ -112,9 +112,8 @@ struct link_buf_t
  * This is a low-level container, consider use <ShmHashMap> first.
  */
 template <class Alloc = SVIPC>
-class ShmLinkTable
-{
-public:
+class ShmLinkTable {
+ public:
   /* Initializer for READ & WRITE
    * @shm_key         key or name of the shm to attach or create
    * @user_node_size  size of node space used for user data storage
@@ -125,7 +124,7 @@ public:
    *
    * @return          true if succeed
    */
-  bool InitForWrite(const std::string& shm_key, 
+  bool InitForWrite(const std::string& shm_key,
                     size_t user_node_size,
                     size_t user_node_num);
 
@@ -267,7 +266,8 @@ public:
     assert(shm_.is_initialized());
     return shm_->buf_used_bytes;
   }
-private:
+
+ private:
   uint32_t AllocNode();
   void FreeNode(uint32_t n);
   bool DumpNode(uint32_t n) const;
@@ -276,7 +276,7 @@ private:
     return shm_->tag_seq_next & 0x7fffffffU;
   }
   size_t buf_nodes(size_t buf_len) const {
-    return (sizeof(BufHead) + buf_len 
+    return (sizeof(BufHead) + buf_len
            + (shm_->node_size - sizeof(NodeHead)) - 1)
            / (shm_->node_size - sizeof(NodeHead));
   }
@@ -284,7 +284,8 @@ private:
 #ifdef UNIT_TEST
   friend class ShmLinkTableTest<Alloc>;
 #endif
-private:
+
+ private:
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;
@@ -298,7 +299,7 @@ private:
     volatile uint64_t buf_used_bytes;
     volatile uint64_t create_time;
     volatile char reserved[64];
-    volatile char nodes_buf[0]; // 8-bytes aligned
+    volatile char nodes_buf[0];  // 8-bytes aligned
   } __attribute__((__packed__));
 
   struct NodeHead {
@@ -326,10 +327,9 @@ private:
 };
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key, 
+bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
                                        size_t user_node_size,
-                                       size_t user_node_num)
-{
+                                       size_t user_node_num) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmLinkTable::InitForWrite: already initialized\n");
   }
@@ -381,8 +381,7 @@ bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::InitForRead(const std::string& shm_key)
-{
+bool ShmLinkTable<Alloc>::InitForRead(const std::string& shm_key) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmLinkTable::InitForRead: already initialized\n");
   }
@@ -407,8 +406,7 @@ bool ShmLinkTable<Alloc>::InitForRead(const std::string& shm_key)
 }
 
 template <class Alloc>
-uint32_t ShmLinkTable<Alloc>::AllocNode()
-{
+uint32_t ShmLinkTable<Alloc>::AllocNode() {
   if (shm_->free_list == 0)
     return 0;
   uint32_t free_node_n = shm_->free_list;
@@ -416,10 +414,9 @@ uint32_t ShmLinkTable<Alloc>::AllocNode()
   shm_->free_node_num--;
   return free_node_n;
 }
-    
+
 template <class Alloc>
-void ShmLinkTable<Alloc>::FreeNode(uint32_t n)
-{
+void ShmLinkTable<Alloc>::FreeNode(uint32_t n) {
   assert(n > 0 && n < shm_->node_num);
   volatile NodeHead* node = GetNode(n);
   node->tag = 0;
@@ -429,8 +426,7 @@ void ShmLinkTable<Alloc>::FreeNode(uint32_t n)
 }
 
 template <class Alloc>
-link_buf_t ShmLinkTable<Alloc>::New(const void* buf, size_t size)
-{
+link_buf_t ShmLinkTable<Alloc>::New(const void* buf, size_t size) {
   if (!shm_.is_initialized()) {
     return link_buf_t{0, 0};
   }
@@ -454,7 +450,7 @@ link_buf_t ShmLinkTable<Alloc>::New(const void* buf, size_t size)
     node->tag = tag;
     volatile char* dst_ptr = static_cast<volatile char*>(node->user_node);
     size_t dst_left = shm_->node_size - sizeof(NodeHead);
-    if (i == 0) { // first node
+    if (i == 0) {  // first node
       node->tag |= kHeadFlag;
       volatile BufHead* buf_head = reinterpret_cast<volatile BufHead*>(dst_ptr);
       buf_head->buf_len = size;
@@ -463,7 +459,7 @@ link_buf_t ShmLinkTable<Alloc>::New(const void* buf, size_t size)
     }
     // copy data
     size_t copy_len = (dst_left <= src_left ? dst_left : src_left);
-    memcpy((void*)dst_ptr, (const void*)src_ptr, copy_len);
+    memcpy(const_cast<char*>(dst_ptr), src_ptr, copy_len);
     src_ptr += copy_len;
     src_left -= copy_len;
     // link the node
@@ -476,8 +472,7 @@ link_buf_t ShmLinkTable<Alloc>::New(const void* buf, size_t size)
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) const
-{
+bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) const {
   if (!shm_.is_initialized()) {
     return false;
   }
@@ -489,19 +484,21 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
   if (head_node->tag != (link_buf.tag | kHeadFlag)) {
     return false;
   }
-  const volatile BufHead* buf_head = reinterpret_cast<const volatile BufHead*>(head_node->user_node);
+  const volatile BufHead* buf_head = reinterpret_cast<const volatile BufHead*>(
+                                       head_node->user_node);
   size_t data_size = buf_head->buf_len;
   size_t left_size = data_size;
   char* dst_ptr = static_cast<char*>(buf);
   size_t dst_left = buf_size;
   // read first node
-  size_t cur_node_data_size = shm_->node_size - sizeof(NodeHead) 
+  size_t cur_node_data_size = shm_->node_size - sizeof(NodeHead)
                                               - sizeof(BufHead);
   if (cur_node_data_size > left_size)
     cur_node_data_size = left_size;
-  size_t copy_len = (cur_node_data_size <= dst_left 
+  size_t copy_len = (cur_node_data_size <= dst_left
                     ? cur_node_data_size : dst_left);
-  memcpy((void*)dst_ptr, (const void*)(head_node->user_node + sizeof(BufHead)), copy_len);
+  memcpy(dst_ptr, const_cast<const char*>(head_node->user_node + sizeof(BufHead)),
+         copy_len);
   left_size -= copy_len;
   dst_ptr += copy_len;
   dst_left -= copy_len;
@@ -513,7 +510,7 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
   cur_node_data_size = shm_->node_size - sizeof(NodeHead);
   uint32_t node_n = head_node->next;
   while (left_size > 0) {
-    if (node_n == 0) { // bad list
+    if (node_n == 0) {  // bad list
       return false;
     }
     const volatile NodeHead* node = GetNode(node_n);
@@ -522,9 +519,9 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
     }
     if (cur_node_data_size > left_size)
       cur_node_data_size = left_size;
-    size_t copy_len = (cur_node_data_size <= dst_left 
+    size_t copy_len = (cur_node_data_size <= dst_left
                       ? cur_node_data_size : dst_left);
-    memcpy((void*)dst_ptr, (const void*)node->user_node, copy_len);
+    memcpy(dst_ptr, const_cast<const char*>(node->user_node), copy_len);
     left_size -= copy_len;
     dst_ptr += copy_len;
     dst_left -= copy_len;
@@ -536,8 +533,7 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, std::string* out) const
-{
+bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, std::string* out) const {
   if (!shm_.is_initialized()) {
     return false;
   }
@@ -553,8 +549,7 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, std::string* out) const
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::Free(link_buf_t link_buf)
-{
+bool ShmLinkTable<Alloc>::Free(link_buf_t link_buf) {
   if (!shm_.is_initialized()) {
     return false;
   }
@@ -587,13 +582,12 @@ bool ShmLinkTable<Alloc>::Free(link_buf_t link_buf)
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::Dump(link_buf_t link_buf) const
-{
+bool ShmLinkTable<Alloc>::Dump(link_buf_t link_buf) const {
   if (!shm_.is_initialized()) {
     Utils::Log(kError, "Dump error: shm not initialized\n");
     return false;
   }
-  Utils::Log(kInfo, "link_buf_t {head:%u, tag:%u}\n", 
+  Utils::Log(kInfo, "link_buf_t {head:%u, tag:%u}\n",
                     link_buf.head, link_buf.tag);
   if (link_buf.head <= 0 || link_buf.head >= shm_->node_num) {
     Utils::Log(kError, "Dump error: bad link_buf\n");
@@ -621,8 +615,7 @@ bool ShmLinkTable<Alloc>::Dump(link_buf_t link_buf) const
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::DumpNode(uint32_t n) const
-{
+bool ShmLinkTable<Alloc>::DumpNode(uint32_t n) const {
   if (!(n > 0 && n < shm_->node_num)) {
     Utils::Log(kError, "Dump error: bad node index(%u)\n", n);
     return false;
@@ -630,30 +623,28 @@ bool ShmLinkTable<Alloc>::DumpNode(uint32_t n) const
   const volatile NodeHead* node = GetNode(n);
   size_t user_node_size = shm_->node_size - sizeof(NodeHead);
   Utils::Log(kInfo, "--------------- NODE ---------------\n"
-                   "index:%u tag:0x%x next:%u\n%s", 
-                   n, node->tag, node->next, 
+                   "index:%u tag:0x%x next:%u\n%s",
+                   n, node->tag, node->next,
                    Utils::Hex(node->user_node, user_node_size));
   return true;
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::Travel(std::function<void(link_buf_t)> f) const
-{
+bool ShmLinkTable<Alloc>::Travel(std::function<void(link_buf_t)> f) const {
   if (!shm_.is_initialized()) {
     return false;
   }
   for (uint32_t n = 1; n < shm_->node_num; n++) {
     const volatile NodeHead* node = GetNode(n);
     if (node->tag & kHeadFlag) {
-      f(link_buf_t{n, node->tag &~ kHeadFlag});
+      f(link_buf_t{n, node->tag & ~kHeadFlag});
     }
   }
   return true;
 }
 
 template <class Alloc>
-bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
-{
+bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix) {
   if (!shm_.is_initialized()) {
     return false;
   }
@@ -675,8 +666,8 @@ bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
       if (node->tag != lb.tag) {
         hstat->bad_linked_link_bufs++;
         if (auto_fix) {
-          // free previous nodes and this node will be freed as leaked node 
-          // if it is not linked in other link-bufs 
+          // free previous nodes and this node will be freed as leaked node
+          // if it is not linked in other link-bufs
           Free(lb);
           hstat->cleared_link_bufs++;
           hstat->total_link_bufs--;
@@ -704,12 +695,12 @@ bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
     return false;
   }
   if (shm_->buf_used_num != hstat->total_link_bufs) {
-      Utils::Log(kWarning, "SHM.buf_used_num(%u) is reset to %lu\n", 
+      Utils::Log(kWarning, "SHM.buf_used_num(%u) is reset to %lu\n",
                 shm_->buf_used_num, hstat->total_link_bufs);
       shm_->buf_used_num = hstat->total_link_bufs;
   }
   if (shm_->buf_used_bytes != hstat->total_link_buf_bytes) {
-      Utils::Log(kWarning, "SHM.buf_used_bytes(%lu) is reset to %lu\n", 
+      Utils::Log(kWarning, "SHM.buf_used_bytes(%lu) is reset to %lu\n",
                 shm_->buf_used_bytes, hstat->total_link_buf_bytes);
       shm_->buf_used_bytes = hstat->total_link_buf_bytes;
   }
@@ -730,13 +721,13 @@ bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
     }
   }
   if (shm_->free_node_num != hstat->total_free_nodes) {
-    Utils::Log(kWarning, "SHM.free_node_num(%u) is reset to %u\n", 
+    Utils::Log(kWarning, "SHM.free_node_num(%u) is reset to %u\n",
               shm_->free_node_num, hstat->total_free_nodes);
     shm_->free_node_num = hstat->total_free_nodes;
   }
   return true;
 }
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_LINK_TABLE_H
+#endif  // SHMC_SHM_LINK_TABLE_H_

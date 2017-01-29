@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SVIPC_SHM_ALLOC_H
-#define _SHMC_SVIPC_SHM_ALLOC_H
+#ifndef SHMC_SVIPC_SHM_ALLOC_H_
+#define SHMC_SVIPC_SHM_ALLOC_H_
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -41,13 +41,12 @@ namespace shmc {
 namespace impl {
 
 template <bool kEnableHugeTLB>
-class SVIPCShmAlloc : public ShmAlloc
-{
-public:
+class SVIPCShmAlloc : public ShmAlloc {
+ public:
   virtual ~SVIPCShmAlloc() {}
 
-  virtual void* Attach(const std::string& key, size_t size, int flags,
-                       size_t* mapped_size) override {
+  void* Attach(const std::string& key, size_t size, int flags,
+                                       size_t* mapped_size) override {
     key_t shm_key;
     if (!str2key(key, &shm_key)) {
       set_last_errno(kErrBadParam);
@@ -76,7 +75,7 @@ public:
     if (flags & kReadOnly)
       shmat_flags |= SHM_RDONLY;
     void* addr = shmat(shm_id, nullptr, shmat_flags);
-    if (addr == (void*)-1) {
+    if (addr == reinterpret_cast<void*>(-1)) {
       set_last_errno(conv_errno());
       return nullptr;
     }
@@ -92,7 +91,7 @@ public:
     return addr;
   }
 
-  virtual bool Detach(void* addr, size_t size) override {
+  bool Detach(void* addr, size_t size) override {
     if (shmdt(addr) < 0) {
       set_last_errno(conv_errno());
       return false;
@@ -100,7 +99,7 @@ public:
     return true;
   }
 
-  virtual bool Unlink(const std::string& key) override {
+  bool Unlink(const std::string& key) override {
     key_t shm_key;
     if (!str2key(key, &shm_key)) {
       set_last_errno(kErrBadParam);
@@ -117,29 +116,27 @@ public:
     }
     return true;
   }
-  virtual size_t AlignSize() override {
+  size_t AlignSize() override {
     return (kEnableHugeTLB ? kAlignSize_HugeTLB : 1);
   }
 
-private:
+ private:
   // 2M-align is a workaround for kernel bug with HugeTLB
   // which has been fixed in new kernels
   // https://bugzilla.kernel.org/show_bug.cgi?id=56881
   static constexpr size_t kAlignSize_HugeTLB = 0x200000UL;
 
-  static bool str2key(const std::string& key, key_t* out)
-  {
+  static bool str2key(const std::string& key, key_t* out) {
     // support decimal, octal, hexadecimal format
     errno = 0;
-    long shm_key = strtol(key.c_str(), NULL, 0);
+    int64_t shm_key = strtol(key.c_str(), NULL, 0);
     if (errno)
       return false;
     *out = static_cast<key_t>(shm_key);
     return true;
   }
 
-  static ShmAllocErrno conv_errno()
-  {
+  static ShmAllocErrno conv_errno() {
     switch (errno) {
     case 0:
       return kErrOK;
@@ -158,11 +155,11 @@ private:
   }
 };
 
-} // namespace impl
+}  // namespace impl
 
 using SVIPC_HugeTLB = impl::SVIPCShmAlloc<true>;
 using SVIPC = impl::SVIPCShmAlloc<false>;
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_ALLOCATOR_H
+#endif  // SHMC_SVIPC_SHM_ALLOC_H_

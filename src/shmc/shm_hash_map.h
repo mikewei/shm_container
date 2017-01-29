@@ -27,10 +27,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_HASH_MAP_H
-#define _SHMC_SHM_HASH_MAP_H
+#ifndef SHMC_SHM_HASH_MAP_H_
+#define SHMC_SHM_HASH_MAP_H_
 
 #include <assert.h>
+#include <utility>
+#include <string>
+#include <vector>
+#include <algorithm>
 #include "shmc/shm_handle.h"
 #include "shmc/common_utils.h"
 #include "shmc/shm_hash_table.h"
@@ -55,9 +59,8 @@ namespace shmc {
  * but Write-Write is not and needs external synchronization.
  */
 template <class KeyType, class Alloc = SVIPC>
-class ShmHashMap
-{
-public:
+class ShmHashMap {
+ public:
   /* Initializer for READ & WRITE
    * @shm_key        key or name of the shm to attach or create
    * @key_num        max number of keys
@@ -250,41 +253,44 @@ public:
    * @return  percentage of free space of the container
    */
   size_t free_percentage() const {
-    return std::min(hash_table_free_percentage(), 
+    return std::min(hash_table_free_percentage(),
                     link_table_free_percentage());
   }
-private:
+
+ private:
   bool DoInsert(const KeyType& key,
                 const void* val_buf,
-                size_t val_buf_len, 
+                size_t val_buf_len,
                 bool replace);
   struct HTNode;
-  bool DoRead(const KeyType& key, const volatile HTNode* node, 
+  bool DoRead(const KeyType& key, const volatile HTNode* node,
               std::string* val) const;
-  bool DoRead(const KeyType& key, const volatile HTNode* node, 
+  bool DoRead(const KeyType& key, const volatile HTNode* node,
               void* val_buf, size_t* val_len) const;
   static constexpr size_t kConcReadTryCount = 8;
 #ifdef UNIT_TEST
   friend class ShmHashMapTest<Alloc>;
 #endif
-private:
+
+ private:
   struct HTNode {
     // fields
     volatile KeyType key;
-    char _padding1[Utils::Padding<KeyType,8>()];
+    char padding1_[Utils::Padding<KeyType, 8>()];
     volatile link_buf_t link_buf;
-    char _padding2[Utils::Padding<link_buf_t,8>()];
+    char padding2_[Utils::Padding<link_buf_t, 8>()];
     // ops
-    std::pair<bool,KeyType> Key() const volatile {
-      KeyType key_cp = key; // read key before link_buf
-      return std::pair<bool,KeyType>(link_buf, key_cp);
+    std::pair<bool, KeyType> Key() const volatile {
+      KeyType key_cp = key;  // read key before link_buf
+      return std::pair<bool, KeyType>(link_buf, key_cp);
     }
   } __attribute__((__packed__));
 
   ShmHashTable<KeyType, HTNode, Alloc> hash_table_;
   ShmLinkTable<Alloc> link_table_;
-public:
-  struct TravelPos : public ShmHashTable<KeyType,HTNode,Alloc>::TravelPos {};
+
+ public:
+  struct TravelPos : public ShmHashTable<KeyType, HTNode, Alloc>::TravelPos {};
   struct HealthStat {
     typename ShmLinkTable<Alloc>::HealthStat lt_stat;
     size_t total_key_values;
@@ -296,11 +302,10 @@ public:
 };
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::InitForWrite(const std::string& shm_key,
-                                             size_t key_num,
-                                             size_t val_node_size,
-                                             size_t val_node_num)
-{
+bool ShmHashMap<KeyType, Alloc>::InitForWrite(const std::string& shm_key,
+                                              size_t key_num,
+                                              size_t val_node_size,
+                                              size_t val_node_num) {
   if (!hash_table_.InitForWrite(shm_key+"0", key_num)) {
     ERR_RET("ShmHashMap::InitForWrite: hash_table init fail\n");
   }
@@ -311,8 +316,7 @@ bool ShmHashMap<KeyType,Alloc>::InitForWrite(const std::string& shm_key,
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::InitForRead(const std::string& shm_key)
-{
+bool ShmHashMap<KeyType, Alloc>::InitForRead(const std::string& shm_key) {
   if (!hash_table_.InitForRead(shm_key+"0")) {
     ERR_RET("ShmHashMap::InitForRead: hash_table init fail\n");
   }
@@ -323,11 +327,10 @@ bool ShmHashMap<KeyType,Alloc>::InitForRead(const std::string& shm_key)
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::DoInsert(const KeyType& key, 
-                                         const void* val_buf, 
-                                         size_t val_buf_len,
-                                         bool replace)
-{
+bool ShmHashMap<KeyType, Alloc>::DoInsert(const KeyType& key,
+                                          const void* val_buf,
+                                          size_t val_buf_len,
+                                          bool replace) {
   bool is_found;
   volatile HTNode* key_node = hash_table_.FindOrAlloc(key, &is_found);
   if (!key_node) {
@@ -350,14 +353,13 @@ bool ShmHashMap<KeyType,Alloc>::DoInsert(const KeyType& key,
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::DoRead(const KeyType& key, 
-                                       const volatile HTNode* node,
-                                       std::string* val) const
-{
+bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
+                                        const volatile HTNode* node,
+                                        std::string* val) const {
   bool ret;
   link_buf_t lb;
   size_t try_count = 0;
-  do { // retry for RW race condition
+  do {  // retry for RW race condition
     if (++try_count > kConcReadTryCount) {
       Utils::Log(kInfo, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
       return false;
@@ -373,14 +375,13 @@ bool ShmHashMap<KeyType,Alloc>::DoRead(const KeyType& key,
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::DoRead(const KeyType& key, 
-                                       const volatile HTNode* node,
-                                       void* val_buf, size_t* val_len) const
-{
+bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
+                                        const volatile HTNode* node,
+                                        void* val_buf, size_t* val_len) const {
   bool ret;
   link_buf_t lb;
   size_t try_count = 0;
-  do { // retry for RW race condition
+  do {  // retry for RW race condition
     if (++try_count > kConcReadTryCount) {
       Utils::Log(kInfo, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
       return false;
@@ -396,8 +397,8 @@ bool ShmHashMap<KeyType,Alloc>::DoRead(const KeyType& key,
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::Find(const KeyType& key, std::string* val) const
-{
+bool ShmHashMap<KeyType, Alloc>::Find(const KeyType& key,
+                                      std::string* val) const {
   const volatile HTNode* key_node = hash_table_.Find(key);
   if (!key_node) {
     Utils::Log(kDebug, "ShmHashMap::Find: key not found\n");
@@ -407,24 +408,22 @@ bool ShmHashMap<KeyType,Alloc>::Find(const KeyType& key, std::string* val) const
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::Erase(const KeyType& key)
-{
+bool ShmHashMap<KeyType, Alloc>::Erase(const KeyType& key) {
   volatile HTNode* key_node = hash_table_.Find(key);
   if (!key_node) {
     return false;
   }
   link_buf_t lb = key_node->link_buf;
   // clear index first
-  key_node->link_buf.head = 0; // write link_buf before key
-  memset((void*)key_node, 0, sizeof(HTNode));
+  key_node->link_buf.head = 0;  // write link_buf before key
+  memset(const_cast<HTNode*>(key_node), 0, sizeof(HTNode));
   // then free link_buf
   link_table_.Free(lb);
   return true;
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::Dump(const KeyType& key) const
-{
+bool ShmHashMap<KeyType, Alloc>::Dump(const KeyType& key) const {
   Utils::Log(kInfo, "===== ShmHashMap Dump =====\n"
                    "pid:%d key:\n%s", getpid(), Utils::Hex(&key, sizeof(key)));
   const volatile HTNode* key_node = hash_table_.Find(key);
@@ -437,11 +436,10 @@ bool ShmHashMap<KeyType,Alloc>::Dump(const KeyType& key) const
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::Travel(TravelPos* pos, size_t max_travel_nodes,
-                     std::function<void(const KeyType&, const std::string&)> f)
-{
+bool ShmHashMap<KeyType, Alloc>::Travel(TravelPos* pos, size_t max_travel_nodes,
+                    std::function<void(const KeyType&, const std::string&)> f) {
   std::string val;
-  return hash_table_.Travel(pos, max_travel_nodes, 
+  return hash_table_.Travel(pos, max_travel_nodes,
                             [this, &f, &val](volatile HTNode* node) {
     KeyType key = node->key;
     if (DoRead(key, node, &val)) {
@@ -451,8 +449,7 @@ bool ShmHashMap<KeyType,Alloc>::Travel(TravelPos* pos, size_t max_travel_nodes,
 }
 
 template <class KeyType, class Alloc>
-bool ShmHashMap<KeyType,Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
-{
+bool ShmHashMap<KeyType, Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix) {
   if (!link_table_.HealthCheck(&hstat->lt_stat, auto_fix)) {
     return false;
   }
@@ -490,6 +487,6 @@ bool ShmHashMap<KeyType,Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix)
   return true;
 }
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_HASH_MAP_H
+#endif  // SHMC_SHM_HASH_MAP_H_

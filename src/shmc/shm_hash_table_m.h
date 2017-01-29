@@ -27,10 +27,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_HASH_TABLE_H
-#define _SHMC_SHM_HASH_TABLE_H
+#ifndef SHMC_SHM_HASH_TABLE_M_H_
+#define SHMC_SHM_HASH_TABLE_M_H_
 
 #include <assert.h>
+#include <string>
+#include <utility>
 #include "shmc/shm_handle.h"
 #include "shmc/common_utils.h"
 
@@ -60,9 +62,8 @@ namespace shmc {
  * and if true the second element holds the key of the node.
  */
 template <class Key, class Node, class Alloc = SVIPC>
-class ShmHashTableM
-{
-public:
+class ShmHashTableM {
+ public:
   /* Initializer for READ & WRITE
    * @shm_key   key or name of the shm to attach or create
    * @col_num   columns of nodes, normally use capacity / row_num
@@ -73,8 +74,8 @@ public:
    *
    * @return    true if succeed
    */
-  bool InitForWrite(const std::string& shm_key, 
-                    size_t col_num, size_t row_num, 
+  bool InitForWrite(const std::string& shm_key,
+                    size_t col_num, size_t row_num,
                     void* user_arg = nullptr);
 
   /* Initializer for READ-ONLY
@@ -85,7 +86,7 @@ public:
    *
    * @return   true if succeed
    */
-  bool InitForRead(const std::string& shm_key, 
+  bool InitForRead(const std::string& shm_key,
                     void* user_arg = nullptr);
 
   /* Find node by key
@@ -143,7 +144,7 @@ public:
    *
    * @return            true if succeed
    */
-  bool Travel(TravelPos* pos, size_t max_travel_nodes, 
+  bool Travel(TravelPos* pos, size_t max_travel_nodes,
               std::function<void(volatile Node*)> f);
 
   /* Travel all nodes
@@ -176,11 +177,13 @@ public:
   size_t expected_capacity() const {
     return ideal_capacity() * 90 / 100;
   }
-private:
+
+ private:
   size_t GetIndex(size_t row, size_t col) const {
     return shm_->col_num * row + col;
   }
-private:
+
+ private:
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;
@@ -203,17 +206,17 @@ private:
 };
 
 template <class Key, class Node, class Alloc>
-bool ShmHashTableM<Key,Node,Alloc>::InitForWrite(const std::string& shm_key, 
-                                                 size_t col_num, size_t row_num, 
-                                                 void* user_arg)
-{
+bool ShmHashTableM<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
+                                                   size_t col_num,
+                                                   size_t row_num,
+                                                   void* user_arg) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmHashTableM::InitForWrite: already initialized\n");
   }
-  if (row_num > kMaxRows || row_num < kMinRows || col_num <= row_num ) {
+  if (row_num > kMaxRows || row_num < kMinRows || col_num <= row_num) {
     ERR_RET("ShmHashTableM::InitForWrite: bad col_num or row_num\n");
   }
-  size_t node_size = sizeof(Node); 
+  size_t node_size = sizeof(Node);
   size_t shm_size = sizeof(ShmHead) + node_size * col_num * row_num;
   user_arg_ = user_arg;
   if (!Utils::GetPrimeArray(col_num, row_num, row_mods_)) {
@@ -255,13 +258,12 @@ bool ShmHashTableM<Key,Node,Alloc>::InitForWrite(const std::string& shm_key,
 }
 
 template <class Key, class Node, class Alloc>
-bool ShmHashTableM<Key,Node,Alloc>::InitForRead(const std::string& shm_key, 
-                                                void* user_arg)
-{
+bool ShmHashTableM<Key, Node, Alloc>::InitForRead(const std::string& shm_key,
+                                                  void* user_arg) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmHashTableM::InitForRead: already initialized\n");
   }
-  size_t node_size = sizeof(Node); 
+  size_t node_size = sizeof(Node);
   user_arg_ = user_arg;
   if (!shm_.InitForRead(shm_key, sizeof(ShmHead))) {
     ERR_RET("ShmHashTableM::InitForRead: shm init(%s, %lu) fail\n",
@@ -289,8 +291,7 @@ bool ShmHashTableM<Key,Node,Alloc>::InitForRead(const std::string& shm_key,
 }
 
 template <class Key, class Node, class Alloc>
-const volatile Node* ShmHashTableM<Key,Node,Alloc>::Find(const Key& key) const
-{
+const volatile Node* ShmHashTableM<Key, Node, Alloc>::Find(const Key& key) const {
   assert(shm_.is_initialized());
   size_t hash_code = std::hash<Key>()(key);
   for (size_t r = 0; r < shm_->row_num; r++) {
@@ -305,8 +306,7 @@ const volatile Node* ShmHashTableM<Key,Node,Alloc>::Find(const Key& key) const
 }
 
 template <class Key, class Node, class Alloc>
-volatile Node* ShmHashTableM<Key,Node,Alloc>::Find(const Key& key)
-{
+volatile Node* ShmHashTableM<Key, Node, Alloc>::Find(const Key& key) {
   assert(shm_.is_initialized());
   size_t hash_code = std::hash<Key>()(key);
   for (size_t r = 0; r < shm_->row_num; r++) {
@@ -321,8 +321,8 @@ volatile Node* ShmHashTableM<Key,Node,Alloc>::Find(const Key& key)
 }
 
 template <class Key, class Node, class Alloc>
-volatile Node* ShmHashTableM<Key,Node,Alloc>::FindOrAlloc(const Key& key, bool* is_found)
-{
+volatile Node* ShmHashTableM<Key, Node, Alloc>::FindOrAlloc(const Key& key,
+                                                            bool* is_found) {
   assert(shm_.is_initialized());
   volatile Node* empty_node = nullptr;
   if (is_found) *is_found = false;
@@ -331,12 +331,12 @@ volatile Node* ShmHashTableM<Key,Node,Alloc>::FindOrAlloc(const Key& key, bool* 
     size_t index = GetIndex(r, hash_code % row_mods_[r]);
     volatile Node* node = &shm_->nodes[index];
     auto key_info = node->Key();
-    if (key_info.first) { // not empty
+    if (key_info.first) {  // not empty
       if (key == key_info.second) {
         if (is_found) *is_found = true;
         return node;
       }
-    } else if (!empty_node) { // emtpy
+    } else if (!empty_node) {  // emtpy
       empty_node = node;
       if (r > shm_->max_row_touched)
         shm_->max_row_touched = r;
@@ -346,9 +346,9 @@ volatile Node* ShmHashTableM<Key,Node,Alloc>::FindOrAlloc(const Key& key, bool* 
 }
 
 template <class Key, class Node, class Alloc>
-bool ShmHashTableM<Key,Node,Alloc>::Travel(TravelPos* pos, size_t max_travel_nodes,
-                                           std::function<void(volatile Node*)> f)
-{
+bool ShmHashTableM<Key, Node, Alloc>::Travel(TravelPos* pos,
+                                             size_t max_travel_nodes,
+                                      std::function<void(volatile Node*)> f) {
   assert(shm_.is_initialized());
   size_t count = 0;
   for (size_t r = 0; r < shm_->row_num; r++) {
@@ -375,6 +375,6 @@ bool ShmHashTableM<Key,Node,Alloc>::Travel(TravelPos* pos, size_t max_travel_nod
   return true;
 }
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_HASH_TABLE_H
+#endif  // SHMC_SHM_HASH_TABLE_M_H_

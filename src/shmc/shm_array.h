@@ -27,10 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_ARRAY_H
-#define _SHMC_SHM_ARRAY_H
+#ifndef SHMC_SHM_ARRAY_H_
+#define SHMC_SHM_ARRAY_H_
 
 #include <assert.h>
+#include <string>
 #include "shmc/shm_handle.h"
 #include "shmc/common_utils.h"
 
@@ -46,9 +47,8 @@ namespace shmc {
  * race condition of reading one node and writing of the same node.
  */
 template <class Node, class Alloc = SVIPC>
-class ShmArray
-{
-public:
+class ShmArray {
+ public:
   /* Initializer for READ & WRITE
    * @shm_key  key or name of the shm to attach or create
    * @size     size of the shm to attach or create
@@ -76,7 +76,7 @@ public:
    * @return   const node reference
    */
   const volatile Node& operator[](int index) const {
-    assert(shm_.is_initialized() && index >= 0 && 
+    assert(shm_.is_initialized() && index >= 0 &&
            static_cast<uint64_t>(index) < shm_->node_num);
     return shm_->nodes[index];
   }
@@ -87,7 +87,7 @@ public:
    * @return   node reference
    */
   volatile Node& operator[](int index) {
-    assert(shm_.is_initialized() && index >= 0 && 
+    assert(shm_.is_initialized() && index >= 0 &&
            static_cast<uint64_t>(index) < shm_->node_num);
     return shm_->nodes[index];
   }
@@ -100,7 +100,8 @@ public:
     assert(shm_.is_initialized());
     return shm_->node_num;
   }
-private:
+
+ private:
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;
@@ -114,12 +115,11 @@ private:
   } __attribute__((__packed__));
 
   ShmHandle<ShmHead, Alloc> shm_;
-private:
 };
 
 template <class Node, class Alloc>
-bool ShmArray<Node,Alloc>::InitForWrite(const std::string& shm_key, size_t size)
-{
+bool ShmArray<Node, Alloc>::InitForWrite(const std::string& shm_key,
+                                         size_t size) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmArray::InitForWrite: already initialized\n");
   }
@@ -152,8 +152,7 @@ bool ShmArray<Node,Alloc>::InitForWrite(const std::string& shm_key, size_t size)
 }
 
 template <class Node, class Alloc>
-bool ShmArray<Node,Alloc>::InitForRead(const std::string& shm_key)
-{
+bool ShmArray<Node, Alloc>::InitForRead(const std::string& shm_key) {
   if (shm_.is_initialized()) {
     ERR_RET("ShmArray::InitForRead: already initialized\n");
   }
@@ -176,6 +175,6 @@ bool ShmArray<Node,Alloc>::InitForRead(const std::string& shm_key)
 }
 
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_SYNC_BUF_H
+#endif  // SHMC_SHM_ARRAY_H_

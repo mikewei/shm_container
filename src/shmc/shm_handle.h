@@ -27,9 +27,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_HANDLE_H
-#define _SHMC_SHM_HANDLE_H
+#ifndef SHMC_SHM_HANDLE_H_
+#define SHMC_SHM_HANDLE_H_
 
+#include <string>
 #include "shmc/shm_alloc.h"
 #include "shmc/svipc_shm_alloc.h"
 #include "shmc/posix_shm_alloc.h"
@@ -46,9 +47,8 @@ namespace shmc {
  * to access the shm data.
  */
 template <class T, class Alloc>
-class ShmHandle
-{
-public:
+class ShmHandle {
+ public:
   /* Destructor
    */
   ~ShmHandle() {
@@ -66,10 +66,12 @@ public:
    */
   bool InitForWrite(const std::string& key, size_t size) {
     if (is_initialized()) return false;
-    ptr_ = static_cast<T*>(Alloc().Attach_AutoCreate(key, size, &size_, 
+    ptr_ = static_cast<T*>(Alloc().Attach_AutoCreate(key, size, &size_,
                                                      &is_newly_created_));
-    if (ptr_) key_ = key;
-    else Utils::Log(kError, "ShmHandler::InitForWrite: %s\n", Utils::Perror());
+    if (ptr_)
+      key_ = key;
+    else
+      Utils::Log(kError, "ShmHandler::InitForWrite: %s\n", Utils::Perror());
     return ptr_;
   }
 
@@ -85,8 +87,10 @@ public:
   bool InitForRead(const std::string& key, size_t size) {
     if (is_initialized()) return false;
     ptr_ = static_cast<T*>(Alloc().Attach_ReadOnly(key, size, &size_));
-    if (ptr_) key_ = key;
-    else Utils::Log(kError, "ShmHandler::InitForRead: %s\n", Utils::Perror());
+    if (ptr_)
+      key_ = key;
+    else
+      Utils::Log(kError, "ShmHandler::InitForRead: %s\n", Utils::Perror());
     return ptr_;
   }
 
@@ -173,13 +177,14 @@ public:
   bool CheckSize(size_t expected_size) const {
     return Utils::RoundAlign(expected_size, Alloc().AlignSize()) == size_;
   }
-private:
+
+ private:
   std::string key_;
   size_t size_ = 0;
   bool is_newly_created_ = false;
   T* ptr_ = nullptr;
 };
 
-} // namespace shmc
+}  // namespace shmc
 
-#endif // _SHMC_SHM_HANDLE_H
+#endif  // SHMC_SHM_HANDLE_H_

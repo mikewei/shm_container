@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _SHMC_SHM_ALLOC_H
-#define _SHMC_SHM_ALLOC_H
+#ifndef SHMC_SHM_ALLOC_H_
+#define SHMC_SHM_ALLOC_H_
 
 #include <string>
 
@@ -52,9 +52,8 @@ enum ShmAllocErrno {
   kErrBiggerSize = 7,
 };
 
-class ShmAlloc
-{
-public:
+class ShmAlloc {
+ public:
   virtual ~ShmAlloc() {}
   int last_errno() {
     return last_errno_;
@@ -105,15 +104,17 @@ public:
   virtual bool Detach(void* addr, size_t size) = 0;
   virtual bool Unlink(const std::string& key) = 0;
   virtual size_t AlignSize() = 0;
-protected:
+
+ protected:
   void set_last_errno(ShmAllocErrno err) {
     last_errno_ = err;
   }
-private:
+
+ private:
   ShmAllocErrno last_errno_ = kErrOK;
 };
 
-} // namespace impl
-} // namespace shmc
+}  // namespace impl
+}  // namespace shmc
 
-#endif // _SHMC_SHM_ALLOCATOR_H
+#endif  // SHMC_SHM_ALLOC_H_
