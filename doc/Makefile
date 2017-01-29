@@ -1,10 +1,10 @@
 all: doc
 
 CXXFLAGS = -I../src --std=c++11 
-CLDOCOPT = --report $(addprefix --merge , $(wildcard *.md)) --type html --output .
+CLDOCOPT = $(addprefix --merge , $(wildcard *.md)) --type html --output .
 
 doc:
-	cldoc generate $(CXXFLAGS) -- $(CLDOCOPT) ../src/*
+	cldoc generate $(CXXFLAGS) -- $(CLDOCOPT) ../src/shmc/*
 
 server:
 	cldoc serve .

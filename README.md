@@ -1,8 +1,6 @@
-#<cldoc:index>
-
-SHM-Container Documentation
-
 # SHM-Container Documentation
+
+## Introduction
 
 Shared-memory is best known as an effective IPC method, moreover, it is a powerful design pattern in server architecture with some notable features:
 
@@ -15,7 +13,21 @@ Many popular high-volume internet services (such as QQ server) have benefit from
 
 * provide a unified interface for different underlying shm mechanism (SYSV, SYSV with HugeTLB, POSIX, even HEAP)
 * provide useful container such as hash-map, broadcast-queue(sync-buf)
-* efficient lock-free implemenation aimed to offer extreme high performance
+* efficient C++11 lock-free implemenation aimed to offer extreme high performance
 * designed for robust and fast, sufficient unit-tests, production ready and verified
+* compact and clean code, only consist of C++ headers with no external dependency
 
 See document of classes in namespace *shmc* for detail.
+
+## HowToUse
+
+The library consists only C++ headers, so importing it in your project is very easy (just add -I dir). It also provides a [bazel](https://bazel.build) BUILD file so just set deps on it if you are using bazel.
+
+If you want to build unit-tests, install bazel and [gtestx](https://github.com/mikewei/gtestx) first.
+
+## Document
+
+You can find document online here: [shm-container doc](http://codinginet/doc/shmcontainer)
+
+Also you can generate doc from source: 1) install cldoc 2) cd doc; make
+

@@ -38,7 +38,7 @@
 
 namespace shmc {
 
-/* A shm implementation of hash table
+/* A shm implementation of hash table (classic version, memory effecient)
  * @Key    type of search key, any type supporting =,==,std::hash
  * @Node   type of node which contains both key and value infomation
  * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
