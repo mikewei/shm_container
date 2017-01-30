@@ -212,7 +212,7 @@ class ShmHashMap {
    * This method will do a whole health check for potential data integrity
    * issues such as bad linked list, corrupted data, memory leak and so on.
    * If errors found it usually means external unexpected overflow or bug of
-   * the library self. If auto_fix is true it will try to fix the error by
+   * the library itself. If auto_fix is true it will try to fix the error by
    * removing bad links, freeing leaked nodes and so on.
    *
    * @return    true if finished the check successfully
@@ -349,7 +349,7 @@ bool ShmHashMap<KeyType, Alloc>::DoInsert(const KeyType& key,
     link_table_.Free(old_lb);
   } else {
     // must write key before link_buf. see CHECK-KEY-POINT
-    key_node->key = key;
+    new (const_cast<KeyType*>(&key_node->key)) KeyType(key);  // contruct key object
     key_node->link_buf = lb;
   }
   return true;
@@ -421,8 +421,7 @@ bool ShmHashMap<KeyType, Alloc>::Erase(const KeyType& key) {
   link_buf_t lb = key_node->link_buf;
   // clear index first
   key_node->link_buf.head = 0;  // write link_buf before key
-  //key_node->key.~KeyType();  // destruct key object
-  memset(const_cast<HTNode*>(key_node), 0, sizeof(HTNode));
+  key_node->key.~KeyType();  // destruct key object
   // then free link_buf
   link_table_.Free(lb);
   return true;
