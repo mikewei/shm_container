@@ -343,11 +343,14 @@ bool ShmHashMap<KeyType, Alloc>::DoInsert(const KeyType& key,
   if (!lb) {
     return false;
   }
-  link_buf_t old_lb = key_node->link_buf;
-  key_node->key = key;
-  key_node->link_buf = lb;
   if (is_found) {
+    link_buf_t old_lb = key_node->link_buf;
+    key_node->link_buf = lb;
     link_table_.Free(old_lb);
+  } else {
+    // must write key before link_buf. see CHECK-KEY-POINT
+    key_node->key = key;
+    key_node->link_buf = lb;
   }
   return true;
 }
@@ -364,13 +367,15 @@ bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
       Utils::Log(kInfo, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
       return false;
     }
-    lb = node->link_buf;
+    lb = node->link_buf;  // LOAD-LB-POINT
+
     ret = link_table_.Read(lb, val);
-  } while (lb != node->link_buf);
-  if (ret && node->key != key) {
-    Utils::Log(kInfo, "ShmHashMap::DoRead fail as key has changed\n");
-    return false;
-  }
+    if (ret && node->key != key) {  // CHECK-KEY-POINT
+      Utils::Log(kInfo, "ShmHashMap::DoRead fail as key has changed\n");
+      return false;
+    }
+
+  } while (lb != node->link_buf);  // check race condition since LOAD-POINT
   return ret;
 }
 
@@ -416,6 +421,7 @@ bool ShmHashMap<KeyType, Alloc>::Erase(const KeyType& key) {
   link_buf_t lb = key_node->link_buf;
   // clear index first
   key_node->link_buf.head = 0;  // write link_buf before key
+  //key_node->key.~KeyType();  // destruct key object
   memset(const_cast<HTNode*>(key_node), 0, sizeof(HTNode));
   // then free link_buf
   link_table_.Free(lb);
