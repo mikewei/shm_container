@@ -413,18 +413,18 @@ template <class Alloc>
 bool ShmSyncBuf<Alloc>::InitForWrite(const std::string& shm_key,
                                      size_t buf_size_bytes) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmSyncBuf::InitForWrite: already initialized\n");
+    SHMC_ERR_RET("ShmSyncBuf::InitForWrite: already initialized\n");
   }
   if (buf_size_bytes < (kOverwriteBufferSize * 2)
       && buf_size_bytes > 0x800000000UL /* 2^32 x 8B */) {
-    ERR_RET("ShmSyncBuf::InitForWrite: invalid buf_size_bytes\n");
+    SHMC_ERR_RET("ShmSyncBuf::InitForWrite: invalid buf_size_bytes\n");
   }
   buf_size_bytes = Utils::RoundAlign<8>(buf_size_bytes);
   size_t seq_index_size = Utils::RoundAlign<2>(buf_size_bytes / min_node_size());
   size_t shm_size = sizeof(ShmHead) + sizeof(uint32_t) * seq_index_size
                                     + buf_size_bytes;
   if (!shm_.InitForWrite(shm_key, shm_size)) {
-    ERR_RET("ShmSyncBuf::InitForWrite: shm_.InitForWrite(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmSyncBuf::InitForWrite: shm_.InitForWrite(%s, %lu) fail\n",
                                        shm_key.c_str(), shm_size);
     return false;
   }
@@ -441,11 +441,11 @@ bool ShmSyncBuf<Alloc>::InitForWrite(const std::string& shm_key,
     shm_->sync_buf_size = buf_size_bytes;
   } else {
     if (shm_->magic != Utils::GenMagic("SyncBuf"))
-      ERR_RET("ShmSyncBuf::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
+      SHMC_ERR_RET("ShmSyncBuf::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
     if (Utils::MajorVer(shm_->ver) != 1)
-      ERR_RET("ShmSyncBuf::InitForWrite: bad ver(0x%x)\n", shm_->ver);
+      SHMC_ERR_RET("ShmSyncBuf::InitForWrite: bad ver(0x%x)\n", shm_->ver);
     if (shm_->head_size != sizeof(ShmHead))
-      ERR_RET("ShmSyncBuf::InitForWrite: bad head_size(%u)\n", shm_->head_size);
+      SHMC_ERR_RET("ShmSyncBuf::InitForWrite: bad head_size(%u)\n", shm_->head_size);
   }
   return true;
 }
@@ -453,22 +453,22 @@ bool ShmSyncBuf<Alloc>::InitForWrite(const std::string& shm_key,
 template <class Alloc>
 bool ShmSyncBuf<Alloc>::InitForRead(const std::string& shm_key) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmSyncBuf::InitForRead: already initialized\n");
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: already initialized\n");
   }
   if (!shm_.InitForRead(shm_key, sizeof(ShmHead))) {
-    ERR_RET("ShmSyncBuf::InitForRead: shm_.InitForRead(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: shm_.InitForRead(%s, %lu) fail\n",
                                       shm_key.c_str(), sizeof(ShmHead));
   }
   if (shm_->magic != Utils::GenMagic("SyncBuf"))
-    ERR_RET("ShmSyncBuf::InitForRead: bad magic(0x%lx)\n", shm_->magic);
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: bad magic(0x%lx)\n", shm_->magic);
   if (Utils::MajorVer(shm_->ver) != 1)
-    ERR_RET("ShmSyncBuf::InitForRead: bad ver(0x%x)\n", shm_->ver);
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: bad ver(0x%x)\n", shm_->ver);
   if (shm_->head_size != sizeof(ShmHead))
-    ERR_RET("ShmSyncBuf::InitForRead: bad head_size(%u)\n", shm_->head_size);
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: bad head_size(%u)\n", shm_->head_size);
   size_t shm_size = sizeof(ShmHead) + sizeof(uint32_t) * shm_->seq_index_size
                                     + shm_->sync_buf_size;
   if (!shm_.CheckSize(shm_size))
-    ERR_RET("ShmSyncBuf::InitForRead: bad shm size(%u)\n", shm_.size());
+    SHMC_ERR_RET("ShmSyncBuf::InitForRead: bad shm size(%u)\n", shm_.size());
   return true;
 }
 

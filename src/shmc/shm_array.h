@@ -37,7 +37,7 @@
 
 namespace shmc {
 
-/* An fixed-siz array container
+/* An fixed-size array container
  * @Node   type of array node, must be StandardLayoutType
  * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
  *
@@ -121,11 +121,11 @@ template <class Node, class Alloc>
 bool ShmArray<Node, Alloc>::InitForWrite(const std::string& shm_key,
                                          size_t size) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmArray::InitForWrite: already initialized\n");
+    SHMC_ERR_RET("ShmArray::InitForWrite: already initialized\n");
   }
   size_t shm_size = sizeof(ShmHead) + sizeof(Node) * size;
   if (!shm_.InitForWrite(shm_key, shm_size)) {
-    ERR_RET("ShmArray::InitForWrite: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmArray::InitForWrite: shm init(%s, %lu) fail\n",
                                     shm_key.c_str(), shm_size);
   }
   uint64_t now_ts = time(NULL);
@@ -138,15 +138,15 @@ bool ShmArray<Node, Alloc>::InitForWrite(const std::string& shm_key,
     shm_->create_time = now_ts;
   } else {
     if (shm_->magic != Utils::GenMagic("Array"))
-      ERR_RET("ShmArray::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
+      SHMC_ERR_RET("ShmArray::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
     if (Utils::MajorVer(shm_->ver) != 1)
-      ERR_RET("ShmArray::InitForWrite: bad ver(0x%x)\n", shm_->ver);
+      SHMC_ERR_RET("ShmArray::InitForWrite: bad ver(0x%x)\n", shm_->ver);
     if (shm_->head_size != sizeof(ShmHead))
-      ERR_RET("ShmArray::InitForWrite: bad head_size(%u)\n", shm_->head_size);
+      SHMC_ERR_RET("ShmArray::InitForWrite: bad head_size(%u)\n", shm_->head_size);
     if (shm_->node_size != sizeof(Node))
-      ERR_RET("ShmArray::InitForWrite: bad node_size(%u)\n", shm_->node_size);
+      SHMC_ERR_RET("ShmArray::InitForWrite: bad node_size(%u)\n", shm_->node_size);
     if (shm_->node_num != size)
-      ERR_RET("ShmArray::InitForWrite: bad node_num(%u)\n", shm_->node_num);
+      SHMC_ERR_RET("ShmArray::InitForWrite: bad node_num(%u)\n", shm_->node_num);
   }
   return true;
 }
@@ -154,23 +154,23 @@ bool ShmArray<Node, Alloc>::InitForWrite(const std::string& shm_key,
 template <class Node, class Alloc>
 bool ShmArray<Node, Alloc>::InitForRead(const std::string& shm_key) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmArray::InitForRead: already initialized\n");
+    SHMC_ERR_RET("ShmArray::InitForRead: already initialized\n");
   }
   if (!shm_.InitForRead(shm_key, sizeof(ShmHead))) {
-    ERR_RET("ShmArray::InitForRead: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmArray::InitForRead: shm init(%s, %lu) fail\n",
                                     shm_key.c_str(), sizeof(ShmHead));
   }
   if (shm_->magic != Utils::GenMagic("Array"))
-    ERR_RET("ShmArray::InitForRead: bad magic(0x%lx)\n", shm_->magic);
+    SHMC_ERR_RET("ShmArray::InitForRead: bad magic(0x%lx)\n", shm_->magic);
   if (Utils::MajorVer(shm_->ver) != 1)
-    ERR_RET("ShmArray::InitForRead: bad ver(0x%x)\n", shm_->ver);
+    SHMC_ERR_RET("ShmArray::InitForRead: bad ver(0x%x)\n", shm_->ver);
   if (shm_->head_size != sizeof(ShmHead))
-    ERR_RET("ShmArray::InitForRead: bad head_size(%u)\n", shm_->head_size);
+    SHMC_ERR_RET("ShmArray::InitForRead: bad head_size(%u)\n", shm_->head_size);
   if (shm_->node_size != sizeof(Node))
-    ERR_RET("ShmArray::InitForRead: bad node_size(%u)\n", shm_->node_size);
+    SHMC_ERR_RET("ShmArray::InitForRead: bad node_size(%u)\n", shm_->node_size);
   size_t shm_size = sizeof(ShmHead) + sizeof(Node) * shm_->node_num;
   if (!shm_.CheckSize(shm_size))
-    ERR_RET("ShmArray::InitForRead: bad shm size(%u)\n", shm_.size());
+    SHMC_ERR_RET("ShmArray::InitForRead: bad shm size(%u)\n", shm_.size());
   return true;
 }
 

@@ -307,10 +307,10 @@ bool ShmHashMap<KeyType, Alloc>::InitForWrite(const std::string& shm_key,
                                               size_t val_node_size,
                                               size_t val_node_num) {
   if (!hash_table_.InitForWrite(shm_key+"0", key_num)) {
-    ERR_RET("ShmHashMap::InitForWrite: hash_table init fail\n");
+    SHMC_ERR_RET("ShmHashMap::InitForWrite: hash_table init fail\n");
   }
   if (!link_table_.InitForWrite(shm_key+"1", val_node_size, val_node_num)) {
-    ERR_RET("ShmHashMap::InitForWrite: link_table init fail\n");
+    SHMC_ERR_RET("ShmHashMap::InitForWrite: link_table init fail\n");
   }
   return true;
 }
@@ -318,10 +318,10 @@ bool ShmHashMap<KeyType, Alloc>::InitForWrite(const std::string& shm_key,
 template <class KeyType, class Alloc>
 bool ShmHashMap<KeyType, Alloc>::InitForRead(const std::string& shm_key) {
   if (!hash_table_.InitForRead(shm_key+"0")) {
-    ERR_RET("ShmHashMap::InitForRead: hash_table init fail\n");
+    SHMC_ERR_RET("ShmHashMap::InitForRead: hash_table init fail\n");
   }
   if (!link_table_.InitForRead(shm_key+"1")) {
-    ERR_RET("ShmHashMap::InitForRead: link_table init fail\n");
+    SHMC_ERR_RET("ShmHashMap::InitForRead: link_table init fail\n");
   }
   return true;
 }
@@ -368,13 +368,11 @@ bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
       return false;
     }
     lb = node->link_buf;  // LOAD-LB-POINT
-
     ret = link_table_.Read(lb, val);
     if (ret && node->key != key) {  // CHECK-KEY-POINT
       Utils::Log(kInfo, "ShmHashMap::DoRead fail as key has changed\n");
       return false;
     }
-
   } while (lb != node->link_buf);  // check race condition since LOAD-POINT
   return ret;
 }

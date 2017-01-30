@@ -53,7 +53,7 @@ enum LogLevel { kError = 1, kWarning, kInfo, kDebug };
  */
 void SetLogHandler(LogLevel lv, std::function<void(LogLevel, const char*)> f);
 
-#define ERR_RET(...) do { \
+#define SHMC_ERR_RET(...) do { \
     Utils::Log(kError, __VA_ARGS__); \
     return false; \
   } while (0)

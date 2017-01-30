@@ -211,23 +211,23 @@ bool ShmHashTableM<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
                                                    size_t row_num,
                                                    void* user_arg) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmHashTableM::InitForWrite: already initialized\n");
+    SHMC_ERR_RET("ShmHashTableM::InitForWrite: already initialized\n");
   }
   if (row_num > kMaxRows || row_num < kMinRows || col_num <= row_num) {
-    ERR_RET("ShmHashTableM::InitForWrite: bad col_num or row_num\n");
+    SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad col_num or row_num\n");
   }
   size_t node_size = sizeof(Node);
   size_t shm_size = sizeof(ShmHead) + node_size * col_num * row_num;
   user_arg_ = user_arg;
   if (!Utils::GetPrimeArray(col_num, row_num, row_mods_)) {
-    ERR_RET("ShmHashTableM::InitForWrite: get_prime_array fail\n");
+    SHMC_ERR_RET("ShmHashTableM::InitForWrite: get_prime_array fail\n");
   }
   capacity_ = 0;
   for (size_t i = 0; i < row_num; i++) {
     capacity_ += row_mods_[i];
   }
   if (!shm_.InitForWrite(shm_key, shm_size)) {
-    ERR_RET("ShmHashTableM::InitForWrite: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmHashTableM::InitForWrite: shm init(%s, %lu) fail\n",
                                           shm_key.c_str(), shm_size);
   }
   uint64_t now_ts = time(NULL);
@@ -242,17 +242,17 @@ bool ShmHashTableM<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
     shm_->max_row_touched = 0;
   } else {
     if (shm_->magic != Utils::GenMagic("HashTab"))
-      ERR_RET("ShmHashTableM::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
     if (Utils::MajorVer(shm_->ver) != 1)
-      ERR_RET("ShmHashTableM::InitForWrite: bad ver(0x%x)\n", shm_->ver);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad ver(0x%x)\n", shm_->ver);
     if (shm_->head_size != sizeof(ShmHead))
-      ERR_RET("ShmHashTableM::InitForWrite: bad head_size(%u)\n", shm_->head_size);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad head_size(%u)\n", shm_->head_size);
     if (shm_->node_size != node_size)
-      ERR_RET("ShmHashTableM::InitForWrite: bad node_size(%u)\n", shm_->node_size);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad node_size(%u)\n", shm_->node_size);
     if (shm_->row_num != row_num)
-      ERR_RET("ShmHashTableM::InitForWrite: bad row_num(%u)\n", shm_->row_num);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad row_num(%u)\n", shm_->row_num);
     if (shm_->col_num != col_num)
-      ERR_RET("ShmHashTableM::InitForWrite: bad col_num(%u)\n", shm_->col_num);
+      SHMC_ERR_RET("ShmHashTableM::InitForWrite: bad col_num(%u)\n", shm_->col_num);
   }
   return true;
 }
@@ -261,27 +261,27 @@ template <class Key, class Node, class Alloc>
 bool ShmHashTableM<Key, Node, Alloc>::InitForRead(const std::string& shm_key,
                                                   void* user_arg) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmHashTableM::InitForRead: already initialized\n");
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: already initialized\n");
   }
   size_t node_size = sizeof(Node);
   user_arg_ = user_arg;
   if (!shm_.InitForRead(shm_key, sizeof(ShmHead))) {
-    ERR_RET("ShmHashTableM::InitForRead: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: shm init(%s, %lu) fail\n",
                                          shm_key.c_str(), sizeof(ShmHead));
   }
   if (shm_->magic != Utils::GenMagic("HashTab"))
-    ERR_RET("ShmHashTableM::InitForRead: bad magic(0x%lx)\n", shm_->magic);
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: bad magic(0x%lx)\n", shm_->magic);
   if (Utils::MajorVer(shm_->ver) != 1)
-    ERR_RET("ShmHashTableM::InitForRead: bad ver(0x%x)\n", shm_->ver);
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: bad ver(0x%x)\n", shm_->ver);
   if (shm_->head_size != sizeof(ShmHead))
-    ERR_RET("ShmHashTableM::InitForRead: bad head_size(%u)\n", shm_->head_size);
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: bad head_size(%u)\n", shm_->head_size);
   if (shm_->node_size != node_size)
-    ERR_RET("ShmHashTableM::InitForRead: bad node_size(%u)\n", shm_->node_size);
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: bad node_size(%u)\n", shm_->node_size);
   size_t shm_size = sizeof(ShmHead) + node_size * shm_->col_num * shm_->row_num;
   if (!shm_.CheckSize(shm_size))
-    ERR_RET("ShmHashTableM::InitForRead: bad shm size(%u)\n", shm_.size());
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: bad shm size(%u)\n", shm_.size());
   if (!Utils::GetPrimeArray(shm_->col_num, shm_->row_num, row_mods_)) {
-    ERR_RET("ShmHashTableM::InitForRead: GetPrimeArray fail");
+    SHMC_ERR_RET("ShmHashTableM::InitForRead: GetPrimeArray fail");
   }
   capacity_ = 0;
   for (size_t i = 0; i < shm_->row_num; i++) {

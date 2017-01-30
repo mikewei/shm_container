@@ -331,16 +331,16 @@ bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
                                        size_t user_node_size,
                                        size_t user_node_num) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmLinkTable::InitForWrite: already initialized\n");
+    SHMC_ERR_RET("ShmLinkTable::InitForWrite: already initialized\n");
   }
   if (user_node_size < sizeof(BufHead) || user_node_num <= 0) {
-    ERR_RET("ShmLinkTable::InitForWrite: invalid user_node parma\n");
+    SHMC_ERR_RET("ShmLinkTable::InitForWrite: invalid user_node parma\n");
   }
   size_t node_size = user_node_size + sizeof(NodeHead);
   size_t node_num = user_node_num + 1;
   size_t shm_size = sizeof(ShmHead) + node_size * node_num;
   if (!shm_.InitForWrite(shm_key, shm_size)) {
-    ERR_RET("ShmLinkTable::InitForWrite: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmLinkTable::InitForWrite: shm init(%s, %lu) fail\n",
                                      shm_key.c_str(), shm_size);
   }
   uint64_t now_ts = time(NULL);
@@ -363,19 +363,19 @@ bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
     shm_->free_list = 1;
   } else {
     if (shm_->magic != Utils::GenMagic("LinkTab"))
-      ERR_RET("ShmLinkTable::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad magic(0x%lx)\n", shm_->magic);
     if (Utils::MajorVer(shm_->ver) != 1)
-      ERR_RET("ShmLinkTable::InitForWrite: bad ver(0x%x)\n", shm_->ver);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad ver(0x%x)\n", shm_->ver);
     if (shm_->head_size != sizeof(ShmHead))
-      ERR_RET("ShmLinkTable::InitForWrite: bad head_size(%u)\n", shm_->head_size);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad head_size(%u)\n", shm_->head_size);
     if (shm_->node_size != node_size)
-      ERR_RET("ShmLinkTable::InitForWrite: bad node_size(%u)\n", shm_->node_size);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad node_size(%u)\n", shm_->node_size);
     if (shm_->node_num != node_num)
-      ERR_RET("ShmLinkTable::InitForWrite: bad node_num(%u)\n", shm_->node_num);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad node_num(%u)\n", shm_->node_num);
     uint32_t free_num = 0;
     for (uint32_t n = shm_->free_list; n; n = GetNode(n)->next, free_num++) {}
     if (shm_->free_node_num != free_num)
-      ERR_RET("ShmLinkTable::InitForWrite: bad free_node_num(%u)\n", shm_->free_node_num);
+      SHMC_ERR_RET("ShmLinkTable::InitForWrite: bad free_node_num(%u)\n", shm_->free_node_num);
   }
   return true;
 }
@@ -383,25 +383,25 @@ bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
 template <class Alloc>
 bool ShmLinkTable<Alloc>::InitForRead(const std::string& shm_key) {
   if (shm_.is_initialized()) {
-    ERR_RET("ShmLinkTable::InitForRead: already initialized\n");
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: already initialized\n");
   }
   if (!shm_.InitForRead(shm_key, sizeof(ShmHead))) {
-    ERR_RET("ShmLinkTable::InitForRead: shm init(%s, %lu) fail\n",
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: shm init(%s, %lu) fail\n",
                                     shm_key.c_str(), sizeof(ShmHead));
   }
   if (shm_->magic != Utils::GenMagic("LinkTab"))
-    ERR_RET("ShmLinkTable::InitForRead: bad magic(0x%lx)\n", shm_->magic);
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad magic(0x%lx)\n", shm_->magic);
   if (Utils::MajorVer(shm_->ver) != 1)
-    ERR_RET("ShmLinkTable::InitForRead: bad ver(0x%x)\n", shm_->ver);
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad ver(0x%x)\n", shm_->ver);
   if (shm_->head_size != sizeof(ShmHead))
-    ERR_RET("ShmLinkTable::InitForRead: bad head_size(%u)\n", shm_->head_size);
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad head_size(%u)\n", shm_->head_size);
   if (shm_->node_size < sizeof(NodeHead) + sizeof(BufHead))
-    ERR_RET("ShmLinkTable::InitForRead: bad node_size(%u)\n", shm_->node_size);
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad node_size(%u)\n", shm_->node_size);
   if (shm_->node_num <= 1)
-    ERR_RET("ShmLinkTable::InitForRead: bad node_num(%u)\n", shm_->node_num);
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad node_num(%u)\n", shm_->node_num);
   size_t shm_size = sizeof(ShmHead) + (size_t)shm_->node_size * shm_->node_num;
   if (!shm_.CheckSize(shm_size))
-    ERR_RET("ShmLinkTable::InitForRead: bad shm size(%u)\n", shm_.size());
+    SHMC_ERR_RET("ShmLinkTable::InitForRead: bad shm size(%u)\n", shm_.size());
   return true;
 }
 
