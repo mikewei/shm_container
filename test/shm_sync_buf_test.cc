@@ -1,3 +1,32 @@
+/* Copyright (c) 2016-2017, Bin Wei <bin@vip.qq.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * The name of of its contributors may not be used to endorse or 
+ * promote products derived from this software without specific prior 
+ * written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <vector>
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_sync_buf.h"
@@ -8,9 +37,8 @@ constexpr size_t kSyncBufSize = 1024*1024*100;
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
 template <class Alloc>
-class ShmSyncBufTest : public testing::Test
-{
-protected:
+class ShmSyncBufTest : public testing::Test {
+ protected:
   virtual ~ShmSyncBufTest() {}
   virtual void SetUp() {
     shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
@@ -27,14 +55,12 @@ protected:
 };
 TYPED_TEST_CASE(ShmSyncBufTest, TestTypes);
 
-TYPED_TEST(ShmSyncBufTest, Init)
-{
+TYPED_TEST(ShmSyncBufTest, Init) {
   ASSERT_TRUE(this->sync_buf_.InitForWrite(kShmKey, kSyncBufSize));
   ASSERT_TRUE(this->sync_buf_ro_.InitForRead(kShmKey));
 }
 
-TYPED_TEST(ShmSyncBufTest, PushRead)
-{
+TYPED_TEST(ShmSyncBufTest, PushRead) {
   ASSERT_TRUE(this->sync_buf_.InitForWrite(kShmKey, kSyncBufSize));
   ASSERT_TRUE(this->sync_buf_.Push("hello", 5));
   shmc::SyncIter it = this->sync_buf_.Head();
@@ -57,8 +83,7 @@ TYPED_TEST(ShmSyncBufTest, PushRead)
   ASSERT_EQ("world", out);
 }
 
-TYPED_TEST(ShmSyncBufTest, FindBySeq)
-{
+TYPED_TEST(ShmSyncBufTest, FindBySeq) {
   ASSERT_TRUE(this->sync_buf_.InitForWrite(kShmKey, kSyncBufSize));
   ASSERT_TRUE(this->sync_buf_.Push("hello 0", 7));
   ASSERT_TRUE(this->sync_buf_.Push("hello 1", 7));
@@ -83,8 +108,7 @@ TYPED_TEST(ShmSyncBufTest, FindBySeq)
   }
 }
 
-TYPED_TEST(ShmSyncBufTest, FindByTime)
-{
+TYPED_TEST(ShmSyncBufTest, FindByTime) {
   shmc::SyncIter it;
   shmc::SyncMeta meta;
   std::string out;
@@ -117,9 +141,8 @@ TYPED_TEST(ShmSyncBufTest, FindByTime)
 // Push perf
 
 template <class Alloc>
-class ShmSyncBufPerfTest : public ShmSyncBufTest<Alloc>
-{
-protected:
+class ShmSyncBufPerfTest : public ShmSyncBufTest<Alloc> {
+ protected:
   virtual ~ShmSyncBufPerfTest() {}
   virtual void SetUp() {
     ShmSyncBufTest<Alloc>::SetUp();
@@ -132,20 +155,17 @@ protected:
 };
 TYPED_TEST_CASE(ShmSyncBufPerfTest, TestTypes);
 
-TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_10B)
-{
+TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_10B) {
   char buf[10];
   this->sync_buf_.Push(buf, sizeof(buf));
 }
 
-TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_100B)
-{
+TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_100B) {
   char buf[100];
   this->sync_buf_.Push(buf, sizeof(buf));
 }
 
-TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_1000B)
-{
+TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_1000B) {
   char buf[1000];
   this->sync_buf_.Push(buf, sizeof(buf));
 }
@@ -153,9 +173,8 @@ TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_1000B)
 // Read perf
 
 template <class Alloc>
-class ShmSyncBufReadPerfTest : public ShmSyncBufPerfTest<Alloc>
-{
-protected:
+class ShmSyncBufReadPerfTest : public ShmSyncBufPerfTest<Alloc> {
+ protected:
   virtual ~ShmSyncBufReadPerfTest() {}
   virtual void SetUp() {
     ShmSyncBufPerfTest<Alloc>::SetUp();
@@ -191,8 +210,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmSyncBufReadPerfTest, TestTypes);
 
-TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadCheck)
-{
+TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadCheck) {
   shmc::SyncMeta meta;
   char buf[1000];
   size_t len;
@@ -209,8 +227,7 @@ TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadCheck)
   ASSERT_TRUE(this->sync_buf_ro_.Next(&this->it_)) << PERF_ABORT;
 }
 
-TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadLoop)
-{
+TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadLoop) {
   shmc::SyncMeta meta;
   char buf[1000];
   size_t len = sizeof(buf);
@@ -223,8 +240,7 @@ TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadLoop)
   }
 }
 
-TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadStringLoop)
-{
+TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadStringLoop) {
   shmc::SyncMeta meta;
   std::string out;
   int ret = this->sync_buf_ro_.Read(this->it_, &meta, &out);
@@ -236,8 +252,7 @@ TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadStringLoop)
   }
 }
 
-TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadMetaLoop)
-{
+TYPED_PERF_TEST(ShmSyncBufReadPerfTest, ConcReadMetaLoop) {
   shmc::SyncMeta meta;
   uint32_t val;
   size_t len = sizeof(val);

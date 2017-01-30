@@ -1,3 +1,32 @@
+/* Copyright (c) 2016-2017, Bin Wei <bin@vip.qq.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * The name of of its contributors may not be used to endorse or 
+ * promote products derived from this software without specific prior 
+ * written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <vector>
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_hash_table_m.h"
@@ -8,8 +37,7 @@ constexpr size_t kRowNum = 50;
 
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
-struct Node
-{
+struct Node {
   uint64_t key;
   uint64_t value;
   std::pair<bool,uint64_t> Key() const volatile {
@@ -18,9 +46,8 @@ struct Node
 };
 
 template <class Alloc>
-class ShmHashTableMTest : public testing::Test
-{
-protected:
+class ShmHashTableMTest : public testing::Test {
+ protected:
   virtual ~ShmHashTableMTest() {}
   virtual void SetUp() {
     shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
@@ -36,8 +63,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmHashTableMTest, TestTypes);
 
-TYPED_TEST(ShmHashTableMTest, Write)
-{
+TYPED_TEST(ShmHashTableMTest, Write) {
   ASSERT_TRUE(this->hash_tab_.InitForWrite(kShmKey, kColNum, kRowNum));
   ASSERT_LT(this->hash_tab_.ideal_capacity(), kColNum * kRowNum);
   ASSERT_GT(this->hash_tab_.ideal_capacity(), kColNum * kRowNum * 95 / 100);
@@ -62,8 +88,7 @@ TYPED_TEST(ShmHashTableMTest, Write)
   }
 }
 
-TYPED_TEST(ShmHashTableMTest, Travel)
-{
+TYPED_TEST(ShmHashTableMTest, Travel) {
   ASSERT_TRUE(this->hash_tab_.InitForWrite(kShmKey, kColNum, kRowNum));
   for (uint64_t k = 1; k <= 10; k++) {
     bool is_found;
@@ -92,9 +117,8 @@ TYPED_TEST(ShmHashTableMTest, Travel)
 }
 
 template <class Alloc>
-class ShmHashTableMReadTest : public ShmHashTableMTest<Alloc>
-{
-protected:
+class ShmHashTableMReadTest : public ShmHashTableMTest<Alloc> {
+ protected:
   virtual ~ShmHashTableMReadTest() {}
   virtual void SetUp() {
     ShmHashTableMTest<Alloc>::SetUp();
@@ -126,8 +150,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmHashTableMReadTest, TestTypes);
 
-TYPED_TEST(ShmHashTableMReadTest, Read)
-{
+TYPED_TEST(ShmHashTableMReadTest, Read) {
   ASSERT_TRUE(this->hash_tab_.InitForRead(kShmKey));
   ASSERT_LT(this->hash_tab_.ideal_capacity(), kColNum * kRowNum);
   ASSERT_GT(this->hash_tab_.ideal_capacity(), kColNum * kRowNum * 95 / 100);
@@ -138,8 +161,7 @@ TYPED_TEST(ShmHashTableMReadTest, Read)
   }
 }
 
-TYPED_PERF_TEST(ShmHashTableMReadTest, PerfRead)
-{
+TYPED_PERF_TEST(ShmHashTableMReadTest, PerfRead) {
   static bool is_inited = false;
   static uint64_t k = 0;
   if (!is_inited) {
@@ -149,8 +171,7 @@ TYPED_PERF_TEST(ShmHashTableMReadTest, PerfRead)
   this->hash_tab_.Find(k++);
 }
 
-TYPED_PERF_TEST(ShmHashTableMReadTest, PerfReadExist)
-{
+TYPED_PERF_TEST(ShmHashTableMReadTest, PerfReadExist) {
   static bool is_inited = false;
   static uint64_t k = 0;
   if (!is_inited) {

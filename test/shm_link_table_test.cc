@@ -1,3 +1,32 @@
+/* Copyright (c) 2016-2017, Bin Wei <bin@vip.qq.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * The name of of its contributors may not be used to endorse or 
+ * promote products derived from this software without specific prior 
+ * written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <vector>
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_link_table.h"
@@ -9,9 +38,8 @@ constexpr size_t kNodeNum = 1000000;
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
 template <class Alloc>
-class ShmLinkTableTest : public testing::Test
-{
-protected:
+class ShmLinkTableTest : public testing::Test {
+ protected:
   virtual ~ShmLinkTableTest() {}
   virtual void SetUp() {
     shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
@@ -37,8 +65,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmLinkTableTest, TestTypes);
 
-TYPED_TEST(ShmLinkTableTest, Alloc)
-{
+TYPED_TEST(ShmLinkTableTest, Alloc) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   for (size_t i = 0; i < kNodeNum; i++) {
     ASSERT_TRUE(this->InvokeAllocNode());
@@ -56,8 +83,7 @@ TYPED_TEST(ShmLinkTableTest, Alloc)
   }
 }
 
-TYPED_TEST(ShmLinkTableTest, Write)
-{
+TYPED_TEST(ShmLinkTableTest, Write) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   shmc::link_buf_t lb;
   ASSERT_TRUE((lb = this->link_tab_.New("hello", 6)));
@@ -68,8 +94,7 @@ TYPED_TEST(ShmLinkTableTest, Write)
   ASSERT_TRUE(this->link_tab_.Free(lb));
 }
 
-TYPED_TEST(ShmLinkTableTest, WriteBig)
-{
+TYPED_TEST(ShmLinkTableTest, WriteBig) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   shmc::link_buf_t lb;
   char write_buf[1000];
@@ -87,8 +112,7 @@ TYPED_TEST(ShmLinkTableTest, WriteBig)
   ASSERT_TRUE(this->link_tab_.Free(lb));
 }
 
-TYPED_TEST(ShmLinkTableTest, ReadLen)
-{
+TYPED_TEST(ShmLinkTableTest, ReadLen) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   shmc::link_buf_t lb;
   char write_buf[1000];
@@ -121,8 +145,7 @@ TYPED_TEST(ShmLinkTableTest, ReadLen)
   ASSERT_TRUE(this->link_tab_.Free(lb));
 }
 
-TYPED_TEST(ShmLinkTableTest, Travel)
-{
+TYPED_TEST(ShmLinkTableTest, Travel) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   ASSERT_TRUE(this->link_tab_.New("hello", 5));
   ASSERT_TRUE(this->link_tab_.New("hello", 5));
@@ -136,8 +159,7 @@ TYPED_TEST(ShmLinkTableTest, Travel)
   ASSERT_EQ(2UL, count);
 }
 
-TYPED_TEST(ShmLinkTableTest, HealthCheck)
-{
+TYPED_TEST(ShmLinkTableTest, HealthCheck) {
   ASSERT_TRUE(this->link_tab_.InitForWrite(kShmKey, kNodeSize, kNodeNum));
   typename decltype(this->link_tab_)::HealthStat hstat;
   ASSERT_TRUE(this->link_tab_.HealthCheck(&hstat, true));
@@ -227,8 +249,7 @@ TYPED_TEST(ShmLinkTableTest, HealthCheck)
   EXPECT_EQ(0UL, hstat.recycled_leaked_nodes);
 }
 
-TYPED_PERF_TEST(ShmLinkTableTest, PerfRead_100B)
-{
+TYPED_PERF_TEST(ShmLinkTableTest, PerfRead_100B) {
   static bool is_inited = false;
   static shmc::link_buf_t lb;
   if (!is_inited) {
@@ -242,8 +263,7 @@ TYPED_PERF_TEST(ShmLinkTableTest, PerfRead_100B)
   ASSERT_TRUE(this->link_tab_.Read(lb, (void*)read_buf, &buf_len)) << PERF_ABORT;
 }
 
-TYPED_PERF_TEST(ShmLinkTableTest, PerfReadStr_100B)
-{
+TYPED_PERF_TEST(ShmLinkTableTest, PerfReadStr_100B) {
   static bool is_inited = false;
   static shmc::link_buf_t lb;
   if (!is_inited) {

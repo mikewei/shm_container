@@ -1,3 +1,32 @@
+/* Copyright (c) 2016-2017, Bin Wei <bin@vip.qq.com>
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * The name of of its contributors may not be used to endorse or 
+ * promote products derived from this software without specific prior 
+ * written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #include <unistd.h>
 #include <vector>
 #include "gtestx/gtestx.h" 
@@ -11,9 +40,8 @@ constexpr size_t kNodeNum = 2000000;
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
 template <class Alloc>
-class ShmHashMapTest : public testing::Test
-{
-protected:
+class ShmHashMapTest : public testing::Test {
+ protected:
   virtual ~ShmHashMapTest() {}
   virtual void SetUp() {
     shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
@@ -38,8 +66,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmHashMapTest, TestTypes);
 
-TYPED_TEST(ShmHashMapTest, ReadWrite)
-{
+TYPED_TEST(ShmHashMapTest, ReadWrite) {
   ASSERT_TRUE(this->hash_map_.InitForWrite(kShmKey, kKeyNum, kNodeSize, kNodeNum));
   ASSERT_TRUE(this->hash_map_.Insert(10000, "hello"));
   std::string out;
@@ -53,8 +80,7 @@ TYPED_TEST(ShmHashMapTest, ReadWrite)
   ASSERT_FALSE(this->hash_map_.Find(10000, &out));
 }
 
-TYPED_TEST(ShmHashMapTest, ReadWriteBig)
-{
+TYPED_TEST(ShmHashMapTest, ReadWriteBig) {
   ASSERT_TRUE(this->hash_map_.InitForWrite(kShmKey, kKeyNum, kNodeSize, kNodeNum));
   int buf[1000];
   for (int i = 0; i < 1000; i++) buf[i] = i;
@@ -77,8 +103,7 @@ TYPED_TEST(ShmHashMapTest, ReadWriteBig)
   ASSERT_TRUE(this->hash_map_.Erase(1001));
 }
 
-TYPED_TEST(ShmHashMapTest, Travel)
-{
+TYPED_TEST(ShmHashMapTest, Travel) {
   ASSERT_TRUE(this->hash_map_.InitForWrite(kShmKey, kKeyNum, kNodeSize, kNodeNum));
   for (size_t i = 0; i < 10; i++) {
     char buf[20];
@@ -106,8 +131,7 @@ TYPED_TEST(ShmHashMapTest, Travel)
   ASSERT_EQ(45UL, sum);
 }
 
-TYPED_TEST(ShmHashMapTest, HealthCheck)
-{
+TYPED_TEST(ShmHashMapTest, HealthCheck) {
   ASSERT_TRUE(this->hash_map_.InitForWrite(kShmKey, kKeyNum, kNodeSize, kNodeNum));
   ASSERT_EQ(100UL, this->hash_map_.free_percentage());
   typename decltype(this->hash_map_)::HealthStat hstat;
@@ -149,9 +173,8 @@ TYPED_TEST(ShmHashMapTest, HealthCheck)
 }
 
 template <class Alloc>
-class ShmHashMapPerfTest : public ShmHashMapTest<Alloc>
-{
-protected:
+class ShmHashMapPerfTest : public ShmHashMapTest<Alloc> {
+ protected:
   virtual ~ShmHashMapPerfTest() {}
   virtual void SetUp() {
     ShmHashMapTest<Alloc>::SetUp();
@@ -171,8 +194,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmHashMapPerfTest, TestTypes);
 
-TYPED_PERF_TEST(ShmHashMapPerfTest, PerfRead_100B)
-{
+TYPED_PERF_TEST(ShmHashMapPerfTest, PerfRead_100B) {
   std::string out;
   ASSERT_TRUE(this->hash_map_.Find(200000, &out)) << PERF_ABORT;
 }
@@ -180,9 +202,8 @@ TYPED_PERF_TEST(ShmHashMapPerfTest, PerfRead_100B)
 constexpr size_t kTestKeyMax = 100;
 
 template <class Alloc>
-class ShmHashMapPerfTestC : public ShmHashMapPerfTest<Alloc>
-{
-protected:
+class ShmHashMapPerfTestC : public ShmHashMapPerfTest<Alloc> {
+ protected:
   virtual ~ShmHashMapPerfTestC() {}
   virtual void SetUp() {
     ShmHashMapPerfTest<Alloc>::SetUp();
@@ -213,8 +234,7 @@ protected:
 };
 TYPED_TEST_CASE(ShmHashMapPerfTestC, TestTypes);
 
-TYPED_PERF_TEST(ShmHashMapPerfTestC, PerfRead_Concurrent)
-{
+TYPED_PERF_TEST(ShmHashMapPerfTestC, PerfRead_Concurrent) {
   static size_t key = 0;
   std::string out;
   ASSERT_TRUE(this->hash_map_.Find(key, &out)) << "key=" << key << PERF_ABORT;
