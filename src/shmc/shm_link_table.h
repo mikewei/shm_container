@@ -114,6 +114,8 @@ struct link_buf_t {
 template <class Alloc = SVIPC>
 class ShmLinkTable {
  public:
+  ShmLinkTable() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key         key or name of the shm to attach or create
    * @user_node_size  size of node space used for user data storage
@@ -286,6 +288,8 @@ class ShmLinkTable {
 #endif
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmLinkTable);
+
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;

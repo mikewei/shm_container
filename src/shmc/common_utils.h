@@ -58,6 +58,12 @@ void SetLogHandler(LogLevel lv, std::function<void(LogLevel, const char*)> f);
     return false; \
   } while (0)
 
+#define SHMC_NOT_COPYABLE_AND_MOVABLE(ClassName) \
+  ClassName(const ClassName&) = delete; \
+  void operator=(const ClassName&) = delete; \
+  ClassName(ClassName&&) = delete; \
+  void operator=(ClassName&&) = delete
+
 namespace impl {
 
 //- Use dummy template as it allows static member variables defined in header

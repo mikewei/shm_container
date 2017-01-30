@@ -61,6 +61,8 @@ namespace shmc {
 template <class KeyType, class Alloc = SVIPC>
 class ShmHashMap {
  public:
+  ShmHashMap() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key        key or name of the shm to attach or create
    * @key_num        max number of keys
@@ -273,6 +275,8 @@ class ShmHashMap {
 #endif
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmHashMap);
+
   struct HTNode {
     // fields
     volatile KeyType key;

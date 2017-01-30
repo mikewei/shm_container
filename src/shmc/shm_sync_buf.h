@@ -68,6 +68,8 @@ struct SyncIter {
 template <class Alloc = SVIPC>
 class ShmSyncBuf {
  public:
+  ShmSyncBuf() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key         key or name of the shm to attach or create
    * @buf_size_bytes  size of the sync buffer
@@ -269,6 +271,8 @@ class ShmSyncBuf {
   }
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmSyncBuf);
+
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;

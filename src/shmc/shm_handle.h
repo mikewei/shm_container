@@ -35,6 +35,7 @@
 #include "shmc/svipc_shm_alloc.h"
 #include "shmc/posix_shm_alloc.h"
 #include "shmc/heap_alloc.h"
+#include "shmc/common_utils.h"
 
 namespace shmc {
 
@@ -49,6 +50,8 @@ namespace shmc {
 template <class T, class Alloc>
 class ShmHandle {
  public:
+  ShmHandle() = default;
+
   /* Destructor
    */
   ~ShmHandle() {
@@ -179,6 +182,8 @@ class ShmHandle {
   }
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmHandle);
+
   std::string key_;
   size_t size_ = 0;
   bool is_newly_created_ = false;

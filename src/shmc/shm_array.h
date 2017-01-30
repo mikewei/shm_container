@@ -49,6 +49,8 @@ namespace shmc {
 template <class Node, class Alloc = SVIPC>
 class ShmArray {
  public:
+  ShmArray() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key  key or name of the shm to attach or create
    * @size     size of the shm to attach or create
@@ -102,6 +104,8 @@ class ShmArray {
   }
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmArray);
+
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;

@@ -64,6 +64,8 @@ namespace shmc {
 template <class Key, class Node, class Alloc = SVIPC>
 class ShmHashTableM {
  public:
+  ShmHashTableM() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key   key or name of the shm to attach or create
    * @col_num   columns of nodes, normally use capacity / row_num
@@ -184,6 +186,8 @@ class ShmHashTableM {
   }
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmHashTableM);
+
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;

@@ -65,6 +65,8 @@ namespace shmc {
 template <class Key, class Node, class Alloc = SVIPC>
 class ShmHashTable {
  public:
+  ShmHashTable() = default;
+
   /* Initializer for READ & WRITE
    * @shm_key   key or name of the shm to attach or create
    * @capacity  expected capacity of hash-table
@@ -223,6 +225,8 @@ class ShmHashTable {
   }
 
  private:
+  SHMC_NOT_COPYABLE_AND_MOVABLE(ShmHashTable);
+
   struct ShmHead {
     volatile uint64_t magic;
     volatile uint32_t ver;
