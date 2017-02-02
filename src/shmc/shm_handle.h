@@ -11,7 +11,7 @@
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * The name of of its contributors may not be used to endorse or 
+ *     * The names of its contributors may not be used to endorse or 
  * promote products derived from this software without specific prior 
  * written permission.
  * 
@@ -61,16 +61,18 @@ class ShmHandle {
   /* Initializer for READ & WRITE
    * @shm_key     key or name of the shm to attach or create
    * @size        size of the shm
+   * @mode        decides when to create new shm
    *
-   * This initializer should be called by the shm writer/owner and
-   * it will try to attach an existing shm or created a new one if needed.
+   * This initializer should be called by the shm writer/owner and it will
+   * try to attach an existing shm or created a new one if needed and allowed.
    *
    * @return      true if succeed
    */
-  bool InitForWrite(const std::string& key, size_t size) {
+  bool InitForWrite(const std::string& key, size_t size,
+                    int create_flags = kCreateIfNotExist) {
     if (is_initialized()) return false;
-    ptr_ = static_cast<T*>(Alloc().Attach_AutoCreate(key, size, &size_,
-                                                     &is_newly_created_));
+    ptr_ = static_cast<T*>(Alloc().Attach_AutoCreate(key, size, create_flags,
+                                                &size_, &is_newly_created_));
     if (ptr_)
       key_ = key;
     else

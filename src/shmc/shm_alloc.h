@@ -11,7 +11,7 @@
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * The name of of its contributors may not be used to endorse or 
+ *     * The names of its contributors may not be used to endorse or 
  * promote products derived from this software without specific prior 
  * written permission.
  * 
@@ -31,6 +31,7 @@
 #define SHMC_SHM_ALLOC_H_
 
 #include <string>
+#include "shmc/common_utils.h"
 
 namespace shmc {
 namespace impl {
@@ -77,24 +78,29 @@ class ShmAlloc {
   void* Attach_MayCreate(const std::string& key, size_t size,
                          size_t* mapped_size = nullptr,
                          bool* created = nullptr) {
-    bool try_create = false;
+    if (created) *created = false;
     void* addr = Attach(key, size, 0, mapped_size);
     if (!addr && last_errno() == kErrNotExist) {
-      try_create = true;
       addr = Attach_ExclCreate(key, size, mapped_size);
+      if (addr && created) *created = true;
     }
-    if (addr && created) *created = try_create;
     return addr;
   }
   void* Attach_AutoCreate(const std::string& key, size_t size,
+                         int create_flags = kCreateIfNotExist,
                          size_t* mapped_size = nullptr,
                          bool* created = nullptr) {
-    void* addr = Attach_MayCreate(key, size, mapped_size, created);
-    if (!addr && last_errno() == kErrBiggerSize) {
+    if (created) *created = false;
+    void* addr = nullptr;
+    if (create_flags & kCreateIfNotExist) {
+      addr = Attach_MayCreate(key, size, mapped_size, created);
+    } else {
+      addr = Attach(key, size, 0, mapped_size);
+    }
+    if (!addr && last_errno() == kErrBiggerSize &&
+        (create_flags & kCreateIfExtending)) {
       addr = Attach_ForceCreate(key, size, mapped_size);
-      if (addr) {
-        if (created) *created = true;
-      }
+      if (addr && created) *created = true;
     }
     return addr;
   }

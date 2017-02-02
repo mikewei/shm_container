@@ -11,7 +11,7 @@
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * The name of of its contributors may not be used to endorse or 
+ *     * The names of its contributors may not be used to endorse or 
  * promote products derived from this software without specific prior 
  * written permission.
  * 
@@ -103,15 +103,17 @@ TYPED_TEST(ShmAllocTest, AutoCreate) {
   void* addr;
   size_t mapped_size;
   bool created = false;
-  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 10000000UL, &mapped_size, &created)));
+  ASSERT_FALSE((addr = this->alloc_->Attach_AutoCreate("0x10001", 10000000UL, shmc::kNoCreate, &mapped_size, &created)));
+  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 10000000UL, shmc::kCreateIfNotExist, &mapped_size, &created)));
   ASSERT_TRUE(this->CheckShmSize(mapped_size, 10000000UL));
   ASSERT_TRUE(created);
   ASSERT_TRUE(this->alloc_->Detach(addr, 10000000UL));
-  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 0, &mapped_size, &created)));
+  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 0, shmc::kNoCreate, &mapped_size, &created)));
   ASSERT_TRUE(this->CheckShmSize(mapped_size, 10000000UL));
   ASSERT_FALSE(created);
   ASSERT_TRUE(this->alloc_->Detach(addr, 10000000UL));
-  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 11000000UL, &mapped_size, &created)));
+  ASSERT_FALSE((addr = this->alloc_->Attach_AutoCreate("0x10001", 11000000UL, shmc::kCreateIfNotExist, &mapped_size, &created)));
+  ASSERT_TRUE((addr = this->alloc_->Attach_AutoCreate("0x10001", 11000000UL, shmc::kCreateIfExtending, &mapped_size, &created)));
   ASSERT_TRUE(this->CheckShmSize(mapped_size, 11000000UL));
   ASSERT_TRUE(created);
   ASSERT_TRUE(this->alloc_->Detach(addr, 11000000UL));

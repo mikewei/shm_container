@@ -11,7 +11,7 @@
  * copyright notice, this list of conditions and the following disclaimer
  * in the documentation and/or other materials provided with the
  * distribution.
- *     * The name of of its contributors may not be used to endorse or 
+ *     * The names of its contributors may not be used to endorse or 
  * promote products derived from this software without specific prior 
  * written permission.
  * 
@@ -44,6 +44,14 @@ namespace shmc {
 /* Log level definition of the library
  */
 enum LogLevel { kError = 1, kWarning, kInfo, kDebug };
+
+/* bit-flag of deciding when to create shm
+ */
+enum ShmCreateFlag {
+  kNoCreate = 0x0,           // never create shm, only attach exist one
+  kCreateIfNotExist = 0x1,   // create shm if not exist
+  kCreateIfExtending = 0x2,  // create new shm if bigger size requested
+};
 
 /* Set the library log level and log handler
  * @lv - only logs with level <= @lv will be handled
