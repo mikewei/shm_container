@@ -37,7 +37,8 @@
 constexpr const char* kShmKey = "0x10007";
 constexpr size_t kQueueBufSize = 1024*1024*1;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::HEAP>;
 
 template <class Alloc>
 class ShmQueueTest : public testing::Test {
@@ -59,6 +60,29 @@ class ShmQueueTest : public testing::Test {
   shmc::ShmQueue<Alloc> queue_r_;
   Alloc alloc_;
 };
+
+// need partial specialization for shmc::HEAP as InitForRead does not work
+template <>
+class ShmQueueTest<shmc::HEAP> : public testing::Test {
+ protected:
+  ShmQueueTest() : queue_r_(queue_w_) {}
+  virtual ~ShmQueueTest() {}
+  virtual void SetUp() {
+    shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
+      fprintf(stderr, "[%d] %s", lv, s);
+    });
+    this->alloc_.Unlink(kShmKey);
+    srand(time(nullptr));
+    ASSERT_TRUE(this->queue_w_.InitForWrite(kShmKey, kQueueBufSize));
+  }
+  virtual void TearDown() {
+    this->alloc_.Unlink(kShmKey);
+  }
+  shmc::ShmQueue<shmc::HEAP> queue_w_;
+  shmc::ShmQueue<shmc::HEAP>& queue_r_;
+  shmc::HEAP alloc_;
+};
+
 TYPED_TEST_CASE(ShmQueueTest, TestTypes);
 
 TYPED_TEST(ShmQueueTest, PushOverloads) {
@@ -125,27 +149,29 @@ TYPED_TEST(ShmQueueTest, PushThenPopLoop) {
 TYPED_TEST(ShmQueueTest, ZeroCopyPushPop) {
   char buf[] = "hello";
   size_t len = sizeof(buf) - 1;
-  typename shmc::ShmQueue<TypeParam>::ZeroCopyBuf zcb;
+  typename shmc::ZeroCopyBuf zcb;
   // normal
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushPrepare(len, &zcb));
   memcpy(zcb.ptr, buf, len);
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushCommit(zcb));
-  ASSERT_TRUE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
-  ASSERT_TRUE(this->queue_w_.ZeroCopyPopCommit(zcb));
+  ASSERT_TRUE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_TRUE(this->queue_r_.ZeroCopyPopCommit(zcb));
   ASSERT_EQ(len, zcb.len);
   ASSERT_EQ(0, memcmp(zcb.ptr, buf, len));
-  ASSERT_FALSE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_FALSE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
   // commit less
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushPrepare(len*2, &zcb));
   ASSERT_EQ(len*2, zcb.len);
   zcb.len = len;
   memcpy(zcb.ptr, buf, len);
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushCommit(zcb));
-  ASSERT_TRUE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
-  ASSERT_TRUE(this->queue_w_.ZeroCopyPopCommit(zcb));
+  ASSERT_TRUE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_TRUE(this->queue_r_.ZeroCopyPopCommit(zcb));
   ASSERT_EQ(0, memcmp(zcb.ptr, buf, len));
-  ASSERT_FALSE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_FALSE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
 }
+
+using PerfTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
 template <class Alloc>
 class ShmQueueConcPerfTest : public ShmQueueTest<Alloc> {
@@ -232,7 +258,7 @@ class ShmQueueConcPerfTest : public ShmQueueTest<Alloc> {
   std::thread timer_thread_;
   shmc::ShmArray<SharedStatus, SharedShmAlloc> status_;
 };
-TYPED_TEST_CASE(ShmQueueConcPerfTest, TestTypes);
+TYPED_TEST_CASE(ShmQueueConcPerfTest, PerfTestTypes);
 
 TYPED_PERF_TEST_OPT(ShmQueueConcPerfTest, ConcWrite, 1000000, 1500) {
   static uint64_t local_write_count = 0;
