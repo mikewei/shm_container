@@ -126,12 +126,25 @@ TYPED_TEST(ShmQueueTest, ZeroCopyPushPop) {
   char buf[] = "hello";
   size_t len = sizeof(buf) - 1;
   typename shmc::ShmQueue<TypeParam>::ZeroCopyBuf zcb;
+  // normal
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushPrepare(len, &zcb));
   memcpy(zcb.ptr, buf, len);
   ASSERT_TRUE(this->queue_w_.ZeroCopyPushCommit(zcb));
   ASSERT_TRUE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_TRUE(this->queue_w_.ZeroCopyPopCommit(zcb));
   ASSERT_EQ(len, zcb.len);
   ASSERT_EQ(0, memcmp(zcb.ptr, buf, len));
+  ASSERT_FALSE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
+  // commit less
+  ASSERT_TRUE(this->queue_w_.ZeroCopyPushPrepare(len*2, &zcb));
+  ASSERT_EQ(len*2, zcb.len);
+  zcb.len = len;
+  memcpy(zcb.ptr, buf, len);
+  ASSERT_TRUE(this->queue_w_.ZeroCopyPushCommit(zcb));
+  ASSERT_TRUE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
+  ASSERT_TRUE(this->queue_w_.ZeroCopyPopCommit(zcb));
+  ASSERT_EQ(0, memcmp(zcb.ptr, buf, len));
+  ASSERT_FALSE(this->queue_w_.ZeroCopyPopPrepare(&zcb));
 }
 
 template <class Alloc>
@@ -176,17 +189,28 @@ class ShmQueueConcPerfTest : public ShmQueueTest<Alloc> {
     ShmQueueTest<Alloc>::TearDown();
   }
   void ConsumerProcess() {
-    char buf[1024*16];
+    union {
+      char buf[1024*16];
+      uint64_t seq;
+    } un;
     size_t len;
     uint64_t local_read_count = 0;
+    uint64_t local_error_count = 0;
+    uint64_t expected_seq = 0;
     while (true) {
-      len = sizeof(buf);
-      if (this->queue_r_.Pop(buf, &len)) {
+      len = sizeof(un.buf);
+      if (this->queue_r_.Pop(un.buf, &len)) {
         local_read_count++;
+        if (un.seq != expected_seq) {
+          local_error_count++;
+        }
+        expected_seq = un.seq + 1;
       }
       if ((local_read_count & 0xff) == 0) {
         status_[0].read_count += local_read_count;
+        status_[0].error_count += local_error_count;
         local_read_count = 0;
+        local_error_count = 0;
       }
     }
   }
@@ -213,9 +237,13 @@ TYPED_TEST_CASE(ShmQueueConcPerfTest, TestTypes);
 TYPED_PERF_TEST_OPT(ShmQueueConcPerfTest, ConcWrite, 1000000, 1500) {
   static uint64_t local_write_count = 0;
   static uint64_t local_overflow_count = 0;
-  char buf[1024*16];
-  if (this->queue_w_.Push(buf, 100)) {
+  static union {
+    char buf[1024*16];
+    uint64_t seq;
+  } un;
+  if (this->queue_w_.Push(un.buf, 100)) {
     local_write_count++;
+    un.seq++;
   } else {
     local_overflow_count++;
   }
