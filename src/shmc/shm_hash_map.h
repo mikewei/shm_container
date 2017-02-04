@@ -48,7 +48,7 @@ namespace shmc {
 
 /* A hash-map container of key-values
  * @KeyType  type of key, need StandardLayoutType supporting =,==,std::hash
- * @Alloc    shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
+ * @Alloc    shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, ANON, HEAP]
  * 
  * HashMap stores collection of Key-Values and supports fast queries. The key
  * is of scalar or struct type and the value is a variable-length buffer. 

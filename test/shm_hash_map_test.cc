@@ -37,7 +37,8 @@ constexpr size_t kKeyNum = 300000;
 constexpr size_t kNodeSize = 32;
 constexpr size_t kNodeNum = 2000000;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::ANON, shmc::HEAP>;
 
 template <class Alloc>
 class ShmHashMapTest : public testing::Test {
@@ -201,6 +202,8 @@ TYPED_PERF_TEST(ShmHashMapPerfTest, PerfRead_100B) {
 
 constexpr size_t kTestKeyMax = 100;
 
+using PerfTestCTypes = testing::Types<shmc::POSIX, shmc::SVIPC,
+                                      shmc::SVIPC_HugeTLB, shmc::ANON>;
 template <class Alloc>
 class ShmHashMapPerfTestC : public ShmHashMapPerfTest<Alloc> {
  protected:
@@ -232,7 +235,7 @@ class ShmHashMapPerfTestC : public ShmHashMapPerfTest<Alloc> {
   }
   pid_t wpid_;
 };
-TYPED_TEST_CASE(ShmHashMapPerfTestC, TestTypes);
+TYPED_TEST_CASE(ShmHashMapPerfTestC, PerfTestCTypes);
 
 TYPED_PERF_TEST(ShmHashMapPerfTestC, PerfRead_Concurrent) {
   static size_t key = 0;

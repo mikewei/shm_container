@@ -34,7 +34,8 @@
 constexpr const char* kShmKey = "0x10006";
 constexpr size_t kSize = 1000000;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::ANON, shmc::HEAP>;
 
 struct Node {
   uint32_t id;
@@ -51,24 +52,30 @@ class ShmArrayTest : public testing::Test {
     });
     this->alloc_.Unlink(kShmKey);
     shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfNotExist);
+    ASSERT_TRUE(this->array_.InitForWrite(kShmKey, kSize));
+    if (shmc::impl::AllocTraits<Alloc>::is_named) {
+      this->array_ro_ = &this->array2_;
+      ASSERT_TRUE(this->array_ro_->InitForRead(kShmKey));
+    } else {
+      this->array_ro_ = &this->array_;
+    }
   }
   virtual void TearDown() {
     this->alloc_.Unlink(kShmKey);
     shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfNotExist);
   }
   shmc::ShmArray<Node, Alloc> array_;
-  shmc::ShmArray<Node, Alloc> array_ro_;
+  shmc::ShmArray<Node, Alloc> array2_;
+  shmc::ShmArray<Node, Alloc>* array_ro_;
   Alloc alloc_;
 };
 TYPED_TEST_CASE(ShmArrayTest, TestTypes);
 
 TYPED_TEST(ShmArrayTest, InitAndRW) {
-  ASSERT_TRUE(this->array_.InitForWrite(kShmKey, kSize));
-  ASSERT_TRUE(this->array_ro_.InitForRead(kShmKey));
   for (size_t i = 0; i < kSize; i++) {
     this->array_[i].id = i;
   }
-  const decltype(this->array_ro_)& array_ro = this->array_ro_;
+  const shmc::ShmArray<Node, TypeParam>& array_ro = *this->array_ro_;
   for (size_t i = 0; i < kSize; i++) {
     auto id = array_ro[i].id;
     ASSERT_EQ(i, id);
@@ -76,10 +83,11 @@ TYPED_TEST(ShmArrayTest, InitAndRW) {
 }
 
 TYPED_TEST(ShmArrayTest, CreateFlags) {
-  ASSERT_TRUE(this->array_.InitForWrite(kShmKey, kSize));
-  shmc::ShmArray<Node, TypeParam> array_new;
-  ASSERT_FALSE(array_new.InitForWrite(kShmKey, kSize*2));
-  shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfExtending);
-  ASSERT_TRUE(array_new.InitForWrite(kShmKey, kSize*2));
+  if (shmc::impl::AllocTraits<TypeParam>::is_named) {
+    shmc::ShmArray<Node, TypeParam> array_new;
+    ASSERT_FALSE(array_new.InitForWrite(kShmKey, kSize*2));
+    shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfExtending);
+    ASSERT_TRUE(array_new.InitForWrite(kShmKey, kSize*2));
+  }
 }
 

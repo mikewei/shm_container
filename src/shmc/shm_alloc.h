@@ -53,6 +53,13 @@ enum ShmAllocErrno {
   kErrBiggerSize = 7,
 };
 
+// this defines default traits, subclasses can override it by partial-spec
+template <class Alloc>
+struct AllocTraits {
+  // named allocator can be found by InitForRead
+  static constexpr bool is_named = true;
+};
+
 class ShmAlloc {
  public:
   virtual ~ShmAlloc() {}

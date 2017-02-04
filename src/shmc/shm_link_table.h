@@ -99,7 +99,7 @@ struct link_buf_t {
 } __attribute__((__packed__));
 
 /* A container of variable length buffers
- * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
+ * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, ANON, HEAP]
  *
  * Buffer of variable length can be stored as linked memory blocks in the
  * container, called link-buf here. The container has a block memory pool

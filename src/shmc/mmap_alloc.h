@@ -108,6 +108,12 @@ class MmapAlloc : public ShmAlloc {
   }
 };
 
+template <bool IsShared>
+struct AllocTraits<MmapAlloc<IsShared>> {
+  // anonymous memory is not named
+  static constexpr bool is_named = false;
+};
+
 }  // namespace impl
 
 using ANON = impl::MmapAlloc<true>;

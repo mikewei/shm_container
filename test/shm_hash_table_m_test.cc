@@ -35,7 +35,8 @@ constexpr const char* kShmKey = "0x10003";
 constexpr size_t kColNum = 50000;
 constexpr size_t kRowNum = 50;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::ANON, shmc::HEAP>;
 
 struct Node {
   uint64_t key;
@@ -116,6 +117,9 @@ TYPED_TEST(ShmHashTableMTest, Travel) {
   ASSERT_EQ(55UL, sum);
 }
 
+using ReadTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC,
+                                     shmc::SVIPC_HugeTLB>;
+
 template <class Alloc>
 class ShmHashTableMReadTest : public ShmHashTableMTest<Alloc> {
  protected:
@@ -148,7 +152,7 @@ class ShmHashTableMReadTest : public ShmHashTableMTest<Alloc> {
   }
   std::vector<uint64_t> keys_;
 };
-TYPED_TEST_CASE(ShmHashTableMReadTest, TestTypes);
+TYPED_TEST_CASE(ShmHashTableMReadTest, ReadTestTypes);
 
 TYPED_TEST(ShmHashTableMReadTest, Read) {
   ASSERT_TRUE(this->hash_tab_.InitForRead(kShmKey));

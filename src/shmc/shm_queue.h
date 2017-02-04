@@ -49,7 +49,7 @@ struct ZeroCopyBuf {
 };
 
 /* A one-writer-one-reader FIFO queue
- * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, HEAP]
+ * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, ANON, HEAP]
  *
  * ShmQueue is implemented as a FIFO queue of fixed size. One writer/producer
  * is assumed to push new data to the tail of the queue, and one 

@@ -35,7 +35,8 @@ constexpr const char* kShmKey = "0x10004";
 constexpr size_t kNodeSize = 32;
 constexpr size_t kNodeNum = 1000000;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::ANON, shmc::HEAP>;
 
 template <class Alloc>
 class ShmLinkTableTest : public testing::Test {

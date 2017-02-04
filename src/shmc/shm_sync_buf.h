@@ -52,7 +52,7 @@ struct SyncIter {
 };
 
 /* A one-writer-multi-reader broadcast queue useful for replica data sync
- * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
+ * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, ANON, HEAP]
  * 
  * ShmSyncBuf is implemented as a circular queue of fixed size. One writer is
  * assumed to push new data to the tail of the queue and internally recycle 
