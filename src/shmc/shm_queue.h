@@ -38,6 +38,31 @@
 
 namespace shmc {
 
+/* Descriptor of internal buffer of ShmQueue for zero-copy
+ *
+ * This descriptor containing a pointer and a length points to the
+ * internal buffer of the queue which can be directly read or written.
+ */
+struct ZeroCopyBuf {
+  void* ptr;
+  size_t len;
+};
+
+/* A one-writer-one-reader FIFO queue
+ * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, HEAP]
+ *
+ * ShmQueue is implemented as a FIFO queue of fixed size. One writer/producer
+ * is assumed to push new data to the tail of the queue, and one 
+ * reader/consumer can read concurrently from the head of the queue. If 
+ * producing of the writer is much faster than consuming of the reader the 
+ * queue would be full and the writer would fail to push data until more data
+ * is popped.
+ *
+ * Read-Write concurrency safety is offered internally in a lock-free manner,
+ * but Write-Write or Read-Read is not. If you have multi-readers or 
+ * multi-writers you can either 1) create a group of ShmQueue or 2) using 
+ * external locks.
+ */
 template <class Alloc = SVIPC>
 class ShmQueue {
  public:
@@ -106,11 +131,6 @@ class ShmQueue {
    * @return  true if succeed
    */
   bool Pop(std::string* data);
-
-  struct ZeroCopyBuf {
-    void* ptr;
-    size_t len;
-  };
 
   bool ZeroCopyPushPrepare(size_t len, ZeroCopyBuf* zcb);
   bool ZeroCopyPushCommit(const ZeroCopyBuf& zcb);
@@ -358,7 +378,7 @@ inline void ShmQueue<Alloc>::ZeroCopyPushCommitUnsafe(const ZeroCopyBuf& zcb) {
   node_head->type = static_cast<uint8_t>(NodeType::kDataNode);
   node_head->flags = 0;
   node_head->len = zcb.len;
-  // tail_pos never get to 0 except initial state because of our limit by 
+  // tail_pos never get to 0 except initial state because of our limit by
   // design, so need not deal with wrap round condition here
   shm_->tail_pos = Utils::RoundAlign<kAlignSize>(
                  static_cast<uint8_t*>(zcb.ptr) + zcb.len - shm_->queue_buf);
