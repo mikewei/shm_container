@@ -32,7 +32,7 @@
 #include "shmc/shm_array.h"
 
 constexpr const char* kShmKey = "0x10006";
-constexpr size_t kSize = 10000;
+constexpr size_t kSize = 1000000;
 
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 
@@ -71,5 +71,13 @@ TYPED_TEST(ShmArrayTest, InitAndRW) {
     auto id = array_ro[i].id;
     ASSERT_EQ(i, id);
   }
+}
+
+TYPED_TEST(ShmArrayTest, CreateFlags) {
+  ASSERT_TRUE(this->array_.InitForWrite(kShmKey, kSize));
+  shmc::ShmArray<Node, TypeParam> array_new;
+  ASSERT_FALSE(array_new.InitForWrite(kShmKey, kSize*2));
+  shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfExtending);
+  ASSERT_TRUE(array_new.InitForWrite(kShmKey, kSize*2));
 }
 

@@ -38,28 +38,9 @@
 #include <string.h>
 #include <utility>
 #include <functional>
+#include "shmc/global_options.h"
 
 namespace shmc {
-
-/* Log level definition of the library
- */
-enum LogLevel { kError = 1, kWarning, kInfo, kDebug };
-
-/* bit-flag of deciding when to create shm
- */
-enum ShmCreateFlag {
-  kNoCreate = 0x0,           // never create shm, only attach exist one
-  kCreateIfNotExist = 0x1,   // create shm if not exist
-  kCreateIfExtending = 0x2,  // create new shm if bigger size requested
-};
-
-/* Set the library log level and log handler
- * @lv - only logs with level <= @lv will be handled
- * @f  - callback to output logs
- *
- * This function must be called before any container initialized.
- */
-void SetLogHandler(LogLevel lv, std::function<void(LogLevel, const char*)> f);
 
 #define SHMC_ERR_RET(...) do { \
     Utils::Log(kError, __VA_ARGS__); \
@@ -81,8 +62,13 @@ class Utils {
   static void Log(LogLevel lv, const char* fmt, ...);
   static void SetLogHandler(LogLevel lv,
                             std::function<void(LogLevel, const char*)> f);
-  static const char* Perror();
 
+  static void SetDefaultCreateFlags(int flgs);
+  static int DefaultCreateFlags() {
+    return create_flags;
+  }
+
+  static const char* Perror();
   static bool GetPrimeArray(size_t top, size_t num, size_t array[]);
   static uint64_t GenMagic(const char* str);
   static const char* Hex(const volatile void* buf, size_t len);
@@ -114,6 +100,7 @@ class Utils {
  private:
   static int log_level;
   static std::function<void(LogLevel, const char*)> log_func;
+  static int create_flags;
 };
 
 template <class Dummy>
@@ -139,6 +126,14 @@ void Utils<Dummy>::SetLogHandler(LogLevel lv,
                                  std::function<void(LogLevel, const char*)> f) {
   log_level = lv;
   log_func  = f;
+}
+
+template <class Dummy>
+int Utils<Dummy>::create_flags = kCreateIfNotExist;
+
+template <class Dummy>
+void Utils<Dummy>::SetDefaultCreateFlags(int flgs) {
+  create_flags = flgs;
 }
 
 template <class Dummy>
@@ -208,9 +203,28 @@ size_t Utils<Dummy>::GetPageSize() {
 
 using Utils = impl::Utils<void>;
 
-inline void SetLogHandler(LogLevel lv,
-                          std::function<void(LogLevel, const char*)> f) {
-  Utils::SetLogHandler(lv, std::move(f));
+/* Set the library log level and log handler
+ * @log_level  - only logs with level <= @log_level will be handled
+ * @log_func   - callback to output logs
+ *
+ * This function must be called before any container initialized.
+ */
+inline void SetLogHandler(LogLevel log_level,
+                          std::function<void(LogLevel, const char*)> log_func) {
+  Utils::SetLogHandler(log_level, std::move(log_func));
+}
+
+/* Set default create-flags used in container's InitForWrite
+ * @create_flags  - bit-OR of some ShmCreateFlag
+ *
+ * By default kCreateIfNotExist is used when InitForWrite is running. You can
+ * override it by calling this function. For example, if you are upgrading
+ * the container for larger volume you can set kCreateIfExtending to allow
+ * delete-then-recreate behavior automatically.
+ * This function must be called before any container initialized.
+ */
+inline void SetDefaultCreateFlags(int create_flags) {
+  Utils::SetDefaultCreateFlags(create_flags);
 }
 
 }  // namespace shmc

@@ -128,7 +128,7 @@ bool ShmArray<Node, Alloc>::InitForWrite(const std::string& shm_key,
     SHMC_ERR_RET("ShmArray::InitForWrite: already initialized\n");
   }
   size_t shm_size = sizeof(ShmHead) + sizeof(Node) * size;
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmArray::InitForWrite: shm init(%s, %lu) fail\n",
                                     shm_key.c_str(), shm_size);
   }

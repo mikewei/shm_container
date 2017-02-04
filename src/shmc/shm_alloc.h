@@ -99,6 +99,9 @@ class ShmAlloc {
     }
     if (!addr && last_errno() == kErrBiggerSize &&
         (create_flags & kCreateIfExtending)) {
+      // A known corner issue: when SVIPC_HugeTLB is used (2M aligned)
+      // and if the addional size is less than 2M it does not work because
+      // kErrBiggerSize will not be triggered
       addr = Attach_ForceCreate(key, size, mapped_size);
       if (addr && created) *created = true;
     }
