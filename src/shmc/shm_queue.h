@@ -132,9 +132,53 @@ class ShmQueue {
    */
   bool Pop(std::string* data);
 
+  /* Prepare step of push data in a zero-copy way
+   * @len  request size of the buffer to write
+   * @zcb  [out] returned descriptor of the buffer to write
+   *
+   * This method first checks for free space of size @len and then returned
+   * the @zcb pointer to the write buffer. It does not change state of the
+   * queue so it is an idempotent operation.
+   *
+   * @return  true if succeed
+   */
   bool ZeroCopyPushPrepare(size_t len, ZeroCopyBuf* zcb);
+
+  /* Commit step of push data in a zero-copy way
+   * @zcb  buffer descriptor returned by the prepare step
+   *
+   * Before calling this you should call prepare step to get the buffer to
+   * write and then filling the buffer in any way. This method will check
+   * integrity of the descriptor and then forward tail-pointer of the queue 
+   * to append the buffer into the queue. For each push this method should
+   * be called only once.
+   *
+   * @return  true if succeed
+   */
   bool ZeroCopyPushCommit(const ZeroCopyBuf& zcb);
+
+  /* Prepare step of pop data in a zero-copy way
+   * @zcb  [out] returned descriptor of the buffer to read
+   *
+   * This method checks for first data-node at the head of the queue and then
+   * returns the @zcb pointer to the data if found. It does not change state
+   * of the queue so it is an idempotent operation.
+   *
+   * @return  true if succeed
+   */
   bool ZeroCopyPopPrepare(ZeroCopyBuf* zcb);
+
+  /* Commit step of pop data in a zero-copy way
+   * @zcb  buffer descriptor returned by the prepare step
+   *
+   * Before calling this you should call prepare step to get the buffer to
+   * read and then reading the buffer in any way. This method will check
+   * integrity of the descriptor and then forward head-pointer of the queue 
+   * to remove the buffer from the queue. For each pop this method should
+   * be called only once.
+   *
+   * @return  true if succeed
+   */
   bool ZeroCopyPopCommit(const ZeroCopyBuf& zcb);
 
  private:
