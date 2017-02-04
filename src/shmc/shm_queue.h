@@ -384,19 +384,23 @@ bool ShmQueue<Alloc>::ZeroCopyPushCommit(const ZeroCopyBuf& zcb) {
   if (write_pos == tail_pos) {
     if (write_pos + write_len >= (head_pos <= tail_pos ? queue_size
                                                        : head_pos)) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPushCommit: overflow\n");
       return false;
     }
   } else if (write_pos == 0) {
     volatile NodeHead* node_head = GetNodeHead(tail_pos);
     if (node_head->start_tag != kStartTag ||
         node_head->type != NodeType::kEndFlagNode) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPushCommit: bad end-flag-node\n");
       return false;
     }
     if (write_len >= head_pos) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPushCommit: overflow\n");
       return false;
     }
   } else {
     // invalid pos
+    Utils::Log(kWarning, "ShmQueue::ZeroCopyPushCommit: invalid pos\n");
     return false;
   }
 
@@ -443,7 +447,7 @@ bool ShmQueue<Alloc>::ZeroCopyPopPrepare(ZeroCopyBuf* zcb) {
                                                  node_head->type, head_pos);
   }
   if (head_pos + GetNodeSize(node_head->len) >
-      (head_pos <= tail_pos ? tail_pos : queue_size)) {
+      (head_pos <= tail_pos ? tail_pos : queue_size - kAlignSize)) {
     SHMC_ERR_RET("ShmQueue::ZeroCopyPopPrepare: bad node len(%u) "
         "pos(%lu,%lu,%lu)\n", node_head->len, head_pos, tail_pos, queue_size);
   }
@@ -475,24 +479,29 @@ bool ShmQueue<Alloc>::ZeroCopyPopCommit(const ZeroCopyBuf& zcb) {
 
   uint64_t read_pos = static_cast<uint8_t*>(zcb.ptr) - sizeof(NodeHead)
                                                      - shm_->queue_buf;
-  size_t read_len = GetNodeSize(zcb.len);
-
+  if (head_pos == tail_pos) {
+    Utils::Log(kWarning, "ShmQueue::ZeroCopyPopCommit: overflow\n");
+    return false;
+  }
   if (read_pos == head_pos) {
-    if (read_pos + read_len >= (head_pos <= tail_pos ? tail_pos
-                                                     : queue_size)) {
+    if (zcb.len != GetNodeHead(read_pos)->len) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPopCommit: bad len\n");
       return false;
     }
-  } else if (read_pos == 0) {
+  } else if (read_pos == 0) {  // && read_pos != head_pos
     volatile NodeHead* node_head = GetNodeHead(head_pos);
     if (node_head->start_tag != kStartTag ||
         node_head->type != NodeType::kEndFlagNode) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPopCommit: bad end-flag-node\n");
       return false;
     }
-    if (read_len >= tail_pos) {
+    if (zcb.len != GetNodeHead(read_pos)->len) {
+      Utils::Log(kWarning, "ShmQueue::ZeroCopyPopCommit: bad len\n");
       return false;
     }
   } else {
     // invalid pos
+    Utils::Log(kWarning, "ShmQueue::ZeroCopyPopCommit: invalid pos\n");
     return false;
   }
 
