@@ -35,6 +35,6 @@
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 0
 #define PATCH_VERSION 0
-#define PRERLEASE_VERSION dev
+#define PRERLEASE_VERSION beta
 
 #endif  // SHMC_VERSION_H_
