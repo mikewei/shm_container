@@ -27,8 +27,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef SHMC_HEAP_ALLOC_H_
-#define SHMC_HEAP_ALLOC_H_
+#ifndef SHMC_MMAP_ALLOC_H_
+#define SHMC_MMAP_ALLOC_H_
 
 #include <sys/mman.h>
 #include <string>
@@ -115,4 +115,4 @@ using HEAP = impl::MmapAlloc<false>;
 
 }  // namespace shmc
 
-#endif  // SHMC_HEAP_ALLOC_H_
+#endif  // SHMC_MMAP_ALLOC_H_
