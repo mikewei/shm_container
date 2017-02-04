@@ -42,7 +42,7 @@ template <class A> class ShmLinkTableTest;
 
 namespace shmc {
 
-/* handle type of link-buffer
+/* Handle type of link-buffer
  *
  * The library user need not care about the implementation and just use
  * it as a basic type which is assignable and comparable.
@@ -343,7 +343,7 @@ bool ShmLinkTable<Alloc>::InitForWrite(const std::string& shm_key,
   size_t node_size = user_node_size + sizeof(NodeHead);
   size_t node_num = user_node_num + 1;
   size_t shm_size = sizeof(ShmHead) + node_size * node_num;
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmLinkTable::InitForWrite: shm init(%s, %lu) fail\n",
                                      shm_key.c_str(), shm_size);
   }

@@ -37,7 +37,7 @@
 
 namespace shmc {
 
-/* An fixed-size array container
+/* A fixed-size array container
  * @Node   type of array node, must be StandardLayoutType
  * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX]
  *

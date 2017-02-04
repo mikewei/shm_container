@@ -427,7 +427,7 @@ bool ShmSyncBuf<Alloc>::InitForWrite(const std::string& shm_key,
   size_t seq_index_size = Utils::RoundAlign<2>(buf_size_bytes / min_node_size());
   size_t shm_size = sizeof(ShmHead) + sizeof(uint32_t) * seq_index_size
                                     + buf_size_bytes;
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmSyncBuf::InitForWrite: shm_.InitForWrite(%s, %lu) fail\n",
                                        shm_key.c_str(), shm_size);
     return false;

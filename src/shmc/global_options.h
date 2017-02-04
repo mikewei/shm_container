@@ -55,9 +55,12 @@ void SetLogHandler(LogLevel log_level,
 /* bit-flag of deciding when to create shm
  */
 enum ShmCreateFlag {
-  kNoCreate = 0x0,           // never create shm, only attach exist one
-  kCreateIfNotExist = 0x1,   // create shm if not exist
-  kCreateIfExtending = 0x2,  // create new shm if bigger size requested
+  // (all bits cleared) never create shm only attach existing one
+  kNoCreate = 0x0,
+  // (1st bit) create shm if not exist
+  kCreateIfNotExist = 0x1,
+  // (2nd bit) create new shm if bigger size requested
+  kCreateIfExtending = 0x2,
 };
 
 /* Set default create-flags used in container's InitForWrite

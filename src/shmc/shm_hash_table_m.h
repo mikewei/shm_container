@@ -230,7 +230,7 @@ bool ShmHashTableM<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
   for (size_t i = 0; i < row_num; i++) {
     capacity_ += row_mods_[i];
   }
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmHashTableM::InitForWrite: shm init(%s, %lu) fail\n",
                                           shm_key.c_str(), shm_size);
   }

@@ -50,9 +50,11 @@ class ShmArrayTest : public testing::Test {
       fprintf(stderr, "[%d] %s", lv, s);
     });
     this->alloc_.Unlink(kShmKey);
+    shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfNotExist);
   }
   virtual void TearDown() {
     this->alloc_.Unlink(kShmKey);
+    shmc::Utils::SetDefaultCreateFlags(shmc::kCreateIfNotExist);
   }
   shmc::ShmArray<Node, Alloc> array_;
   shmc::ShmArray<Node, Alloc> array_ro_;

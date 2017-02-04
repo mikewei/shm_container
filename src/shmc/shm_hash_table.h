@@ -223,6 +223,14 @@ class ShmHashTable {
   size_t GetIndex(size_t row, size_t col) const {
     return row_index_[row] + col;
   }
+  static size_t SquareRoot(size_t n) {
+    for (size_t r = 0; r <= n; r++) {
+      size_t sq = r * r;
+      if (sq == n) return r;
+      else if (sq > n) return r - 1;
+    }
+    return 0;  // never get here
+  }
 
  private:
   SHMC_NOT_COPYABLE_AND_MOVABLE(ShmHashTable);
@@ -273,15 +281,6 @@ void ShmHashTable<Key, Node, Alloc>::CalcAllRows(size_t first_row_size,
   *row_num = row_count;
 }
 
-static inline size_t SquareRoot(size_t n) {
-  for (size_t r = 0; r <= n; r++) {
-    size_t sq = r * r;
-    if (sq == n) return r;
-    else if (sq > n) return r - 1;
-  }
-  return 0;  // never get here
-}
-
 template <class Key, class Node, class Alloc>
 bool ShmHashTable<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
                                                   size_t capacity) {
@@ -310,7 +309,7 @@ bool ShmHashTable<Key, Node, Alloc>::InitForWrite(const std::string& shm_key,
 
   size_t node_size = sizeof(Node);
   size_t shm_size = sizeof(ShmHead) + node_size * node_num_;
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmHashTable::InitForWrite: shm init(%s, %lu) fail\n",
                                          shm_key.c_str(), shm_size);
   }

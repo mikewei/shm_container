@@ -200,7 +200,7 @@ bool ShmQueue<Alloc>::InitForWrite(const std::string& shm_key,
   }
   buf_size_bytes = Utils::RoundAlign<kAlignSize>(buf_size_bytes);
   size_t shm_size = sizeof(ShmHead) + buf_size_bytes;
-  if (!shm_.InitForWrite(shm_key, shm_size)) {
+  if (!shm_.InitForWrite(shm_key, shm_size, Utils::DefaultCreateFlags())) {
     SHMC_ERR_RET("ShmQueue::InitForWrite: shm_.InitForWrite(%s, %lu) fail\n",
                                                   shm_key.c_str(), shm_size);
     return false;
