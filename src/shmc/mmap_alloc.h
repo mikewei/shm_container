@@ -39,9 +39,10 @@ namespace shmc {
 
 namespace impl {
 
-class HeapAlloc : public ShmAlloc {
+template <bool IsShared>
+class MmapAlloc : public ShmAlloc {
  public:
-  virtual ~HeapAlloc() {}
+  virtual ~MmapAlloc() {}
 
   void* Attach(const std::string& key, size_t size, int flags,
                        size_t* mapped_size) override {
@@ -57,7 +58,8 @@ class HeapAlloc : public ShmAlloc {
     } else {
       mmap_prot = PROT_READ | PROT_WRITE;
     }
-    void* addr = mmap(nullptr, size, mmap_prot, MAP_PRIVATE|MAP_ANONYMOUS,
+    int share_flag = (IsShared ? MAP_SHARED : MAP_PRIVATE);
+    void* addr = mmap(nullptr, size, mmap_prot, share_flag|MAP_ANONYMOUS,
                       -1, 0);
     if (addr == reinterpret_cast<void*>(-1)) {
       set_last_errno(conv_errno());
@@ -108,7 +110,8 @@ class HeapAlloc : public ShmAlloc {
 
 }  // namespace impl
 
-using HEAP = impl::HeapAlloc;
+using ANON = impl::MmapAlloc<true>;
+using HEAP = impl::MmapAlloc<false>;
 
 }  // namespace shmc
 

@@ -38,7 +38,7 @@ constexpr const char* kShmKey = "0x10007";
 constexpr size_t kQueueBufSize = 1024*1024*1;
 
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
-                                 shmc::HEAP>;
+                                 shmc::ANON, shmc::HEAP>;
 
 template <class Alloc>
 class ShmQueueTest : public testing::Test {
@@ -61,7 +61,27 @@ class ShmQueueTest : public testing::Test {
   Alloc alloc_;
 };
 
-// need partial specialization for shmc::HEAP as InitForRead does not work
+// need partial specialization for shmc::ANON/HEAP as InitForRead does not work
+template <>
+class ShmQueueTest<shmc::ANON> : public testing::Test {
+ protected:
+  ShmQueueTest() : queue_r_(queue_w_) {}
+  virtual ~ShmQueueTest() {}
+  virtual void SetUp() {
+    shmc::SetLogHandler(shmc::kDebug, [](shmc::LogLevel lv, const char* s) {
+      fprintf(stderr, "[%d] %s", lv, s);
+    });
+    this->alloc_.Unlink(kShmKey);
+    srand(time(nullptr));
+    ASSERT_TRUE(this->queue_w_.InitForWrite(kShmKey, kQueueBufSize));
+  }
+  virtual void TearDown() {
+    this->alloc_.Unlink(kShmKey);
+  }
+  shmc::ShmQueue<shmc::HEAP> queue_w_;
+  shmc::ShmQueue<shmc::HEAP>& queue_r_;
+  shmc::HEAP alloc_;
+};
 template <>
 class ShmQueueTest<shmc::HEAP> : public testing::Test {
  protected:
@@ -171,7 +191,8 @@ TYPED_TEST(ShmQueueTest, ZeroCopyPushPop) {
   ASSERT_FALSE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
 }
 
-using PerfTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+using PerfTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                     shmc::ANON>;
 
 template <class Alloc>
 class ShmQueueConcPerfTest : public ShmQueueTest<Alloc> {

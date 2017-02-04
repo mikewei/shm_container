@@ -29,7 +29,6 @@
  */
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_handle.h"
-#include "shmc/heap_alloc.h"
 
 template <class Alloc>
 class ShmHandleForHeapTest : public testing::Test {
@@ -47,7 +46,7 @@ class ShmHandleForHeapTest : public testing::Test {
   shmc::ShmHandle<char, Alloc> shm_handle_;
 };
 
-using TestTypes = testing::Types<shmc::HEAP>;
+using TestTypes = testing::Types<shmc::ANON, shmc::HEAP>;
 TYPED_TEST_CASE(ShmHandleForHeapTest, TestTypes);
 
 TYPED_TEST(ShmHandleForHeapTest, InitForWrite) {

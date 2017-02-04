@@ -34,7 +34,8 @@
 constexpr const char* kShmKey = "0x10003";
 constexpr size_t kCapacity = 2500000;
 
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB, shmc::HEAP>;
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
+                                 shmc::ANON, shmc::HEAP>;
 
 struct Node {
   uint64_t key;

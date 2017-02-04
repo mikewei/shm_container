@@ -34,7 +34,7 @@
 #include "shmc/shm_alloc.h"
 #include "shmc/svipc_shm_alloc.h"
 #include "shmc/posix_shm_alloc.h"
-#include "shmc/heap_alloc.h"
+#include "shmc/mmap_alloc.h"
 #include "shmc/common_utils.h"
 
 namespace shmc {
