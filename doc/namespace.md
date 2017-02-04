@@ -9,7 +9,7 @@ All containers support following allocators:
 * ANON           - anonymous shared memory, allocated by mmap(2) with MAP\_SHARED|MAP\_ANONYMOUS
 * HEAP           - process private memory, allocated by mmap(2) with MAP\_PRIVATE|MAP\_ANONYMOUS
 
-All APIs are in this namespace. See Classed listed below.
+All APIs are in this namespace. See Classes listed below.
 
 #<cldoc:shmc::impl>
 internal use
