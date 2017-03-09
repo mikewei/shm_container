@@ -32,9 +32,9 @@
 
 // conform to Semantic Versioning (http://semver.org)
 
-#define MAJOR_VERSION 1
-#define MINOR_VERSION 0
-#define PATCH_VERSION 0
-#define PRERLEASE_VERSION beta
+#define SHMC_MAJOR_VERSION 1
+#define SHMC_MINOR_VERSION 0
+#define SHMC_PATCH_VERSION 0
+#define SHMC_PRERLEASE_VERSION beta
 
 #endif  // SHMC_VERSION_H_
