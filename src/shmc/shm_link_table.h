@@ -305,16 +305,19 @@ class ShmLinkTable {
     volatile char reserved[64];
     volatile char nodes_buf[0];  // 8-bytes aligned
   } __attribute__((__packed__));
+  static_assert(sizeof(ShmHead) == 120, "unexpected ShmHead layout");
 
   struct NodeHead {
     volatile uint32_t next;
     volatile uint32_t tag;
     volatile char user_node[0];
   } __attribute__((__packed__));
+  static_assert(sizeof(NodeHead) == 8, "unexpected NodeHead layout");
 
   struct BufHead {
     volatile uint32_t buf_len;
   } __attribute__((__packed__));
+  static_assert(sizeof(BufHead) == 4, "unexpected BufHead layout");
 
   const volatile NodeHead* GetNode(size_t index) const {
     assert(index > 0 && index < shm_->node_num);

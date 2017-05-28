@@ -287,6 +287,7 @@ class ShmSyncBuf {
     volatile uint32_t seq_index[0];
     // volatile char sync_buf[0]; // 8-bytes aligned
   } __attribute__((__packed__));
+  static_assert(sizeof(ShmHead) == 128, "unexpected ShmHead layout");
 
   static constexpr uint16_t kStartTag = 0x57c0;
   static constexpr uint16_t kEndTag   = 0x57c1;
@@ -301,12 +302,14 @@ class ShmSyncBuf {
     volatile uint32_t time_usec;
     volatile char data[0];
   } __attribute__((__packed__));
+  static_assert(sizeof(SyncNodeHead) == 24, "unexpected SyncNodeHead layout");
 
   struct SyncNodeTail {
     volatile uint16_t end_tag;
     volatile uint16_t reserved;
     volatile uint32_t len;
   } __attribute__((__packed__));
+  static_assert(sizeof(SyncNodeTail) == 8, "unexpected SyncNodeTail layout");
 
   ShmHandle<ShmHead, Alloc> shm_;
 

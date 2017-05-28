@@ -200,7 +200,11 @@ class ShmHashTableM {
     volatile char reserved[64];
     volatile Node nodes[0];
   } __attribute__((__packed__));
+  static_assert(sizeof(ShmHead) == 104, "unexpected ShmHead layout");
+  static_assert(alignof(Node) <= 8, "align requirement of Node can't be met");
+
   ShmHandle<ShmHead, Alloc> shm_;
+
   // 50-rows is often a well performed setting
   static const size_t kMinRows = 10;
   static const size_t kMaxRows = 200;

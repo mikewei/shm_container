@@ -116,7 +116,9 @@ class ShmArray {
     volatile uint64_t create_time;
     volatile char reserved[64];
     volatile Node nodes[0];
-  } __attribute__((__packed__));
+  };
+  static_assert(sizeof(ShmHead) == 104, "unexpected ShmHead layout");
+  static_assert(alignof(Node) <= 8, "align requirement of Node can't be met");
 
   ShmHandle<ShmHead, Alloc> shm_;
 };

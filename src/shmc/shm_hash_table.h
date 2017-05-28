@@ -249,6 +249,9 @@ class ShmHashTable {
     volatile char reserved[64];
     volatile Node nodes[0];
   };
+  static_assert(sizeof(ShmHead) == 112, "unexpected ShmHead layout");
+  static_assert(alignof(Node) <= 8, "align requirement of Node can't be met");
+
   ShmHandle<ShmHead, Alloc> shm_;
 
   static constexpr size_t kMaxRows = 100;
