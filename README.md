@@ -19,6 +19,10 @@ Many popular high-volume internet services (such as QQ server) have benefit from
 
 See document of classes in namespace *shmc* for detail.
 
+## Limitation
+
+Currently only Linux/x86 platform is supported. Moreover, its design goal is all for server side application.
+
 ## HowToUse
 
 The library consists only C++ headers, so importing it in your project is very easy (just add -I dir). It also provides a [bazel](https://bazel.build) BUILD file so just set deps on it if you are using bazel.
