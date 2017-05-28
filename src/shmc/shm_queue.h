@@ -197,6 +197,7 @@ class ShmQueue {
     volatile uint8_t reserved[72];
     volatile uint8_t queue_buf[0];
   } __attribute__((__packed__));
+  static_assert(sizeof(ShmHead) == 128, "unexpected ShmHead layout");
 
   static constexpr size_t kAlignSize = 64;
   static constexpr uint16_t kStartTag = 0x9cec;
