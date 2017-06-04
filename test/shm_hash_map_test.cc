@@ -147,7 +147,7 @@ TYPED_TEST(ShmHashMapTest, HealthCheck) {
   auto node = this->hash_table()->FindOrAlloc(1, &is_found);
   ASSERT_TRUE(node && !is_found);
   node->key = 1;
-  node->link_buf.head = 1;
+  node->link_buf.m.head = 1;
   ASSERT_TRUE(this->hash_map_.HealthCheck(&hstat, true));
   EXPECT_EQ(0UL, hstat.total_key_values);
   EXPECT_EQ(1UL, hstat.bad_key_values);

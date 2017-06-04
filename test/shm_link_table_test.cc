@@ -177,7 +177,7 @@ TYPED_TEST(ShmLinkTableTest, HealthCheck) {
   char buf[64];
   shmc::link_buf_t lb;
   ASSERT_TRUE((lb = this->link_tab_.New(buf, 40)));
-  auto node1 = this->InvokeGetNode(lb.head);
+  auto node1 = this->InvokeGetNode(lb.head());
   auto node2 = this->InvokeGetNode(node1->next);
   node2->tag = 0;
   // check again
@@ -193,7 +193,7 @@ TYPED_TEST(ShmLinkTableTest, HealthCheck) {
   EXPECT_EQ(1UL, hstat.recycled_leaked_nodes);
   // too long link buf
   ASSERT_TRUE((lb = this->link_tab_.New(buf, 40)));
-  node1 = this->InvokeGetNode(lb.head);
+  node1 = this->InvokeGetNode(lb.head());
   *(uint32_t*)node1->user_node = 10;
   // check again
   ASSERT_TRUE(this->link_tab_.HealthCheck(&hstat, true));
@@ -209,7 +209,7 @@ TYPED_TEST(ShmLinkTableTest, HealthCheck) {
   ASSERT_TRUE(this->link_tab_.Free(lb));
   // too short link buf
   ASSERT_TRUE((lb = this->link_tab_.New(buf, 40)));
-  node1 = this->InvokeGetNode(lb.head);
+  node1 = this->InvokeGetNode(lb.head());
   *(uint32_t*)node1->user_node = 80;
   // check again
   ASSERT_TRUE(this->link_tab_.HealthCheck(&hstat, true));
@@ -224,7 +224,7 @@ TYPED_TEST(ShmLinkTableTest, HealthCheck) {
   EXPECT_EQ(0UL, hstat.recycled_leaked_nodes);
   // leaked node
   ASSERT_TRUE((lb = this->link_tab_.New(buf, 40)));
-  node1 = this->InvokeGetNode(lb.head);
+  node1 = this->InvokeGetNode(lb.head());
   node1->tag = 0;
   // check again
   ASSERT_TRUE(this->link_tab_.HealthCheck(&hstat, true));
