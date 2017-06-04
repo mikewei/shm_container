@@ -48,44 +48,46 @@ namespace shmc {
  * it as a basic type which is assignable and comparable.
  */
 struct link_buf_t {
-  uint32_t head;
-  uint32_t tag;
+  union {
+    uint64_t head_and_tag;  // allow atomic access
+    struct {
+      uint32_t head;
+      uint32_t tag;
+    } m;
+  };
 
   //- unfortunately C++ volatile type need these code
-  link_buf_t() : head(0), tag(0) {}
-  link_buf_t(uint32_t h, uint32_t t) : head(h), tag(t) {}
+  link_buf_t() : head_and_tag(0) {}
+  link_buf_t(uint32_t h, uint32_t t) {
+    m.head = h;
+    m.tag  = t;
+  }
   link_buf_t(const volatile link_buf_t& lb) {  // NOLINT
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
   }
   link_buf_t(const volatile link_buf_t&& lb) {  // NOLINT
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
   }
   link_buf_t& operator=(const volatile link_buf_t& lb) {  // NOLINT
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
     return *this;
   }
   link_buf_t& operator=(const volatile link_buf_t&& lb) {
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
     return *this;
   }
   //- return void to avoid warning about implicit dereference of volatile
   void operator=(const volatile link_buf_t& lb) volatile {  // NOLINT
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
   }
   void operator=(const volatile link_buf_t&& lb) volatile {
-    head = lb.head;
-    tag  = lb.tag;
+    head_and_tag = lb.head_and_tag;
   }
   bool operator==(const volatile link_buf_t& lb) const volatile {  // NOLINT
-    return (head == lb.head && tag == lb.tag);
+    return (head_and_tag == lb.head_and_tag);
   }
   bool operator==(const volatile link_buf_t&& lb) const volatile {
-    return (head == lb.head && tag == lb.tag);
+    return (head_and_tag == lb.head_and_tag);
   }
   bool operator!=(const volatile link_buf_t& lb) const volatile {  // NOLINT
     return !(*this == lb);
@@ -93,10 +95,33 @@ struct link_buf_t {
   bool operator!=(const volatile link_buf_t&& lb) const volatile {
     return !(*this == lb);
   }
-  operator bool() const volatile {
-    return (head != 0);
+  operator bool() const {
+    return (head_and_tag != 0);
   }
-} __attribute__((__packed__));
+  operator bool() const volatile {
+    return (head_and_tag != 0);
+  }
+  uint32_t head() const {
+    return m.head;
+  }
+  uint32_t head() const volatile {
+    return m.head;
+  }
+  uint32_t tag() const {
+    return m.tag;
+  }
+  uint32_t tag() const volatile {
+    return m.tag;
+  }
+  void clear() {
+    head_and_tag = 0;
+  }
+  void clear() volatile {
+    head_and_tag = 0;
+  }
+};
+static_assert(sizeof(link_buf_t) == 8, "unexpected link_buf_t size");
+static_assert(alignof(link_buf_t) == 8, "unexpected link_buf_t alignment");
 
 /* A container of variable length buffers
  * @Alloc  shm allocator to use [SVIPC(default), SVIPC_HugeTLB, POSIX, ANON, HEAP]
@@ -484,11 +509,11 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
     return false;
   }
   size_t buf_size = *size;
-  if (link_buf.head <= 0 || link_buf.head >= shm_->node_num) {
+  if (link_buf.head() <= 0 || link_buf.head() >= shm_->node_num) {
     return false;
   }
-  const volatile NodeHead* head_node = GetNode(link_buf.head);
-  if (head_node->tag != (link_buf.tag | kHeadFlag)) {
+  const volatile NodeHead* head_node = GetNode(link_buf.head());
+  if (head_node->tag != (link_buf.tag() | kHeadFlag)) {
     return false;
   }
   const volatile BufHead* buf_head = reinterpret_cast<const volatile BufHead*>(
@@ -521,7 +546,7 @@ bool ShmLinkTable<Alloc>::Read(link_buf_t link_buf, void* buf, size_t* size) con
       return false;
     }
     const volatile NodeHead* node = GetNode(node_n);
-    if (node->tag != link_buf.tag) {
+    if (node->tag != link_buf.tag()) {
       return false;
     }
     if (cur_node_data_size > left_size)
@@ -560,21 +585,21 @@ bool ShmLinkTable<Alloc>::Free(link_buf_t link_buf) {
   if (!shm_.is_initialized()) {
     return false;
   }
-  if (link_buf.head <= 0 || link_buf.head >= shm_->node_num) {
+  if (link_buf.head() <= 0 || link_buf.head() >= shm_->node_num) {
     return false;
   }
-  volatile NodeHead* head_node = GetNode(link_buf.head);
-  if (head_node->tag != (link_buf.tag | kHeadFlag)) {
+  volatile NodeHead* head_node = GetNode(link_buf.head());
+  if (head_node->tag != (link_buf.tag() | kHeadFlag)) {
     return false;
   }
   volatile BufHead* buf_head = (volatile BufHead*)(head_node->user_node);
   size_t buf_len = buf_head->buf_len;
   uint32_t next_node_n = head_node->next;
-  FreeNode(link_buf.head);
+  FreeNode(link_buf.head());
   uint32_t node_n = next_node_n;
   while (node_n > 0) {
     volatile NodeHead* node = GetNode(node_n);
-    if (node->tag != link_buf.tag) {
+    if (node->tag != link_buf.tag()) {
       shm_->buf_used_num--;
       shm_->buf_used_bytes -= buf_len;
       return false;
@@ -595,14 +620,14 @@ bool ShmLinkTable<Alloc>::Dump(link_buf_t link_buf) const {
     return false;
   }
   Utils::Log(kInfo, "link_buf_t {head:%u, tag:%u}\n",
-                    link_buf.head, link_buf.tag);
-  if (link_buf.head <= 0 || link_buf.head >= shm_->node_num) {
+                    link_buf.head(), link_buf.tag());
+  if (link_buf.head() <= 0 || link_buf.head() >= shm_->node_num) {
     Utils::Log(kError, "Dump error: bad link_buf\n");
     return false;
   }
-  const volatile NodeHead* head_node = GetNode(link_buf.head);
-  DumpNode(link_buf.head);
-  if (head_node->tag != (link_buf.tag | kHeadFlag)) {
+  const volatile NodeHead* head_node = GetNode(link_buf.head());
+  DumpNode(link_buf.head());
+  if (head_node->tag != (link_buf.tag() | kHeadFlag)) {
     Utils::Log(kError, "Dump error: bad tag of the head node\n");
     return false;
   }
@@ -612,7 +637,7 @@ bool ShmLinkTable<Alloc>::Dump(link_buf_t link_buf) const {
   while (node_n > 0) {
     const volatile NodeHead* node = GetNode(node_n);
     DumpNode(node_n);
-    if (node->tag != link_buf.tag) {
+    if (node->tag != link_buf.tag()) {
       Utils::Log(kError, "Dump error: bad tag of node\n");
       return false;
     }
@@ -659,18 +684,18 @@ bool ShmLinkTable<Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix) {
   std::vector<bool> bitmap(shm_->node_num);
   // mark linked nodes
   if (!Travel([this, hstat, auto_fix, &bitmap](link_buf_t lb) {
-    const volatile NodeHead* head_node = GetNode(lb.head);
-    assert(head_node->tag == (lb.tag | kHeadFlag));
+    const volatile NodeHead* head_node = GetNode(lb.head());
+    assert(head_node->tag == (lb.tag() | kHeadFlag));
     const volatile BufHead* buf_head = (const volatile BufHead*)(head_node->user_node);
     hstat->total_link_bufs++;
     hstat->total_link_buf_bytes += buf_head->buf_len;
     size_t need_nodes = buf_nodes(buf_head->buf_len);
-    bitmap[lb.head] = true;
+    bitmap[lb.head()] = true;
     uint32_t node_n = head_node->next;
     size_t checked_nodes = 1;
     while (node_n > 0) {
       const volatile NodeHead* node = GetNode(node_n);
-      if (node->tag != lb.tag) {
+      if (node->tag != lb.tag()) {
         hstat->bad_linked_link_bufs++;
         if (auto_fix) {
           // free previous nodes and this node will be freed as leaked node

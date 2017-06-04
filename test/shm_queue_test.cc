@@ -128,7 +128,7 @@ TYPED_TEST(ShmQueueTest, PushOverloads) {
 TYPED_TEST(ShmQueueTest, PopOverloads) {
   std::string src{"hello"};
   // Pop(void*, size_t*)
-  char buf[64];
+  char buf[64] = {0};
   size_t len = sizeof(buf);
   ASSERT_TRUE(this->queue_w_.Push(src));
   ASSERT_TRUE(this->queue_r_.Pop(buf, &len));

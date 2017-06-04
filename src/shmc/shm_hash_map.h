@@ -269,7 +269,7 @@ class ShmHashMap {
               std::string* val) const;
   bool DoRead(const KeyType& key, const volatile HTNode* node,
               void* val_buf, size_t* val_len) const;
-  static constexpr size_t kConcReadTryCount = 8;
+  static constexpr size_t kConcReadTryCount = 64;
 #ifdef UNIT_TEST
   friend class ShmHashMapTest<Alloc>;
 #endif
@@ -288,7 +288,9 @@ class ShmHashMap {
       KeyType key_cp = key;  // read key before link_buf
       return std::pair<bool, KeyType>(link_buf, key_cp);
     }
-  } __attribute__((__packed__));
+  };
+  static_assert(alignof(KeyType) <= 8, "align requirement of KeyType can't be met");
+  static_assert(alignof(HTNode) == 8, "unexpected align requirement of HTNode");
 
   ShmHashTable<KeyType, HTNode, Alloc> hash_table_;
   ShmLinkTable<Alloc> link_table_;
@@ -363,12 +365,24 @@ template <class KeyType, class Alloc>
 bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
                                         const volatile HTNode* node,
                                         std::string* val) const {
+  // Concurrency safety description
+  // HTNode state transition:
+  //   INIT -> KEY set -> LB set -> LB reset -> ... -> LB cleared -> KEY cleared -> INIT
+  // Atomicity requirement:
+  //   LB set/reset/clear must be atomic
+  //   KEY set/cleared need not be atomic
+  // Optimistic lock:
+  //   ~ read LB first
+  //   ~   critical code
+  //   ~ read LB second
+  //   if two read of LB are identical and valid, the ciritical code can
+  //   see consistent value of KEY and LB-CONTENT
   bool ret;
   link_buf_t lb;
   size_t try_count = 0;
   do {  // retry for RW race condition
     if (++try_count > kConcReadTryCount) {
-      Utils::Log(kInfo, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
+      Utils::Log(kWarning, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
       return false;
     }
     lb = node->link_buf;  // LOAD-LB-POINT
@@ -390,16 +404,16 @@ bool ShmHashMap<KeyType, Alloc>::DoRead(const KeyType& key,
   size_t try_count = 0;
   do {  // retry for RW race condition
     if (++try_count > kConcReadTryCount) {
-      Utils::Log(kInfo, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
+      Utils::Log(kWarning, "ShmHashMap::DoRead fail after trying %lu times\n", try_count);
       return false;
     }
-    lb = node->link_buf;
+    lb = node->link_buf;  // LOAD-LB-POINT
     ret = link_table_.Read(lb, val_buf, val_len);
-  } while (lb != node->link_buf);
-  if (ret && node->key != key) {
-    Utils::Log(kInfo, "ShmHashMap::DoRead fail as key has changed\n");
-    return false;
-  }
+    if (ret && node->key != key) {  // CHECK-KEY-POINT
+      Utils::Log(kInfo, "ShmHashMap::DoRead fail as key has changed\n");
+      return false;
+    }
+  } while (lb != node->link_buf);  // check race condition since LOAD-POINT
   return ret;
 }
 
@@ -422,7 +436,7 @@ bool ShmHashMap<KeyType, Alloc>::Erase(const KeyType& key) {
   }
   link_buf_t lb = key_node->link_buf;
   // clear index first
-  key_node->link_buf.head = 0;  // write link_buf before key
+  key_node->link_buf.clear();  // write link_buf before key
   key_node->key.~KeyType();  // destruct key object
   // then free link_buf
   link_table_.Free(lb);
@@ -468,7 +482,7 @@ bool ShmHashMap<KeyType, Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix) {
     link_buf_t lb = node->link_buf;
     size_t buf_len = 0;
     if (DoRead(key, node, nullptr, &buf_len)) {
-      bitmap[lb.head] = true;
+      bitmap[lb.head()] = true;
     } else {
       hstat->bad_key_values++;
       if (auto_fix) {
@@ -481,7 +495,7 @@ bool ShmHashMap<KeyType, Alloc>::HealthCheck(HealthStat* hstat, bool auto_fix) {
     return false;
   }
   if (!link_table_.Travel([this, hstat, auto_fix, &bitmap](link_buf_t lb) {
-    if (!bitmap[lb.head]) {
+    if (!bitmap[lb.head()]) {
       hstat->leaked_values++;
       if (auto_fix) {
         link_table_.Free(lb);
