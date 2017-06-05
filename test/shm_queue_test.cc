@@ -34,11 +34,15 @@
 #include "shmc/shm_queue.h"
 #include "shmc/shm_array.h"
 
+namespace {
+
 constexpr const char* kShmKey = "0x10007";
 constexpr size_t kQueueBufSize = 1024*1024*1;
 
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
                                  shmc::ANON, shmc::HEAP>;
+
+}  // namespace
 
 template <class Alloc>
 class ShmQueueTest : public testing::Test {
@@ -191,8 +195,12 @@ TYPED_TEST(ShmQueueTest, ZeroCopyPushPop) {
   ASSERT_FALSE(this->queue_r_.ZeroCopyPopPrepare(&zcb));
 }
 
+namespace {
+
 using PerfTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
                                      shmc::ANON>;
+
+}  // namespace
 
 template <class Alloc>
 class ShmQueueConcPerfTest : public ShmQueueTest<Alloc> {

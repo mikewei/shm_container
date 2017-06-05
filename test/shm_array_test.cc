@@ -31,6 +31,8 @@
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_array.h"
 
+namespace {
+
 constexpr const char* kShmKey = "0x10006";
 constexpr size_t kSize = 1000000;
 
@@ -41,6 +43,8 @@ struct Node {
   uint32_t id;
   uint32_t val;
 } __attribute__((packed));
+
+}  // namespace
 
 template <class Alloc>
 class ShmArrayTest : public testing::Test {

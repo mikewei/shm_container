@@ -31,6 +31,8 @@
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_hash_table_m.h"
 
+namespace {
+
 constexpr const char* kShmKey = "0x10003";
 constexpr size_t kColNum = 50000;
 constexpr size_t kRowNum = 50;
@@ -45,6 +47,8 @@ struct Node {
     return std::make_pair((key != 0), key);
   }
 };
+
+}  // namespace
 
 template <class Alloc>
 class ShmHashTableMTest : public testing::Test {
@@ -117,8 +121,12 @@ TYPED_TEST(ShmHashTableMTest, Travel) {
   ASSERT_EQ(55UL, sum);
 }
 
+namespace {
+
 using ReadTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC,
                                      shmc::SVIPC_HugeTLB>;
+
+}  // namespace
 
 template <class Alloc>
 class ShmHashTableMReadTest : public ShmHashTableMTest<Alloc> {
