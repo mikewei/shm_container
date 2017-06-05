@@ -31,6 +31,12 @@
 #include "shmc/shm_handle.h"
 #include "shmc/svipc_shm_alloc.h"
 
+namespace {
+
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+
+}  // namespace
+
 template <class Alloc>
 class ShmHandleTest : public testing::Test {
  protected:
@@ -46,8 +52,6 @@ class ShmHandleTest : public testing::Test {
   }
   shmc::ShmHandle<char, Alloc> shm_handle_;
 };
-
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 TYPED_TEST_CASE(ShmHandleTest, TestTypes);
 
 TYPED_TEST(ShmHandleTest, InitForWrite) {

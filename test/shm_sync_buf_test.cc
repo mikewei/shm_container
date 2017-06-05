@@ -31,11 +31,15 @@
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_sync_buf.h"
 
+namespace {
+
 constexpr const char* kShmKey = "0x10005";
 constexpr size_t kSyncBufSize = 1024*1024*100;
 
 using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB,
                                  shmc::ANON, shmc::HEAP>;
+
+}  // namespace
 
 template <class Alloc>
 class ShmSyncBufTest : public testing::Test {
@@ -174,8 +178,12 @@ TYPED_PERF_TEST(ShmSyncBufPerfTest, Push_1000B) {
 
 // Read perf
 
+namespace {
+
 using ReadPerfTestTypes = testing::Types<shmc::POSIX, shmc::SVIPC,
                                          shmc::SVIPC_HugeTLB, shmc::ANON>;
+
+}  // namespace
 
 template <class Alloc>
 class ShmSyncBufReadPerfTest : public ShmSyncBufPerfTest<Alloc> {

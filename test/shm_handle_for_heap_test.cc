@@ -30,6 +30,12 @@
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_handle.h"
 
+namespace {
+
+using TestTypes = testing::Types<shmc::ANON, shmc::HEAP>;
+
+}  // namespace
+
 template <class Alloc>
 class ShmHandleForHeapTest : public testing::Test {
  protected:
@@ -45,8 +51,6 @@ class ShmHandleForHeapTest : public testing::Test {
   }
   shmc::ShmHandle<char, Alloc> shm_handle_;
 };
-
-using TestTypes = testing::Types<shmc::ANON, shmc::HEAP>;
 TYPED_TEST_CASE(ShmHandleForHeapTest, TestTypes);
 
 TYPED_TEST(ShmHandleForHeapTest, InitForWrite) {

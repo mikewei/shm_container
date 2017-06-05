@@ -31,6 +31,8 @@
 #include "gtestx/gtestx.h" 
 #include "shmc/shm_hash_table.h"
 
+namespace {
+
 constexpr const char* kShmKey = "0x10003";
 constexpr size_t kCapacity = 2500000;
 
@@ -47,6 +49,8 @@ struct Node {
     return std::make_pair((key > arg), key);
   }
 };
+
+}  // namespace
 
 template <class Alloc>
 class ShmHashTableTest : public testing::Test {

@@ -31,6 +31,12 @@
 #include "shmc/svipc_shm_alloc.h"
 #include "shmc/posix_shm_alloc.h"
 
+namespace {
+
+using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
+
+}  // namespace
+
 template <class T>
 class ShmAllocTest : public testing::Test {
  protected:
@@ -51,8 +57,6 @@ class ShmAllocTest : public testing::Test {
   }
   shmc::impl::ShmAlloc* alloc_;
 };
-
-using TestTypes = testing::Types<shmc::POSIX, shmc::SVIPC, shmc::SVIPC_HugeTLB>;
 TYPED_TEST_CASE(ShmAllocTest, TestTypes);
 
 TYPED_TEST(ShmAllocTest, CreateUnlink) {
