@@ -423,7 +423,7 @@ bool ShmSyncBuf<Alloc>::InitForWrite(const std::string& shm_key,
     SHMC_ERR_RET("ShmSyncBuf::InitForWrite: already initialized\n");
   }
   if (buf_size_bytes < (kOverwriteBufferSize * 2)
-      && buf_size_bytes > 0x800000000UL /* 2^32 x 8B */) {
+      || buf_size_bytes > 0x800000000UL /* 2^32 x 8B */) {
     SHMC_ERR_RET("ShmSyncBuf::InitForWrite: invalid buf_size_bytes\n");
   }
   buf_size_bytes = Utils::RoundAlign<8>(buf_size_bytes);
